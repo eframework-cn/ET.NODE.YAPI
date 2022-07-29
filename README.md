@@ -128,3 +128,8 @@ YApi 是<strong>高效</strong>、<strong>易用</strong>、<strong>功能强大
 ### License
 Apache License 2.0
 
+### Extend
+* volta控制nodejs版本: https://volta.sh/
+* 安装nodejs@12.22.8: volta install node@12.22.8
+* 安装mongodb: https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-6.0.0-signed.msi
+* 安装依赖: yarn install

@@ -1,2 +1,5 @@
 node_modules/*
-common/json-schema-mockjs.js
+common/json-schema-mockjs.
+client/**/*.js
+*.js
+./**/*.js

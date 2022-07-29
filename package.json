@@ -12,7 +12,7 @@
     "start": " node server/app.js",
     "test": "ava",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "build-client": "NODE_ENV=production ykit pack -m",
+    "build-client": "cross-env NODE_ENV=production ykit pack -m -c",
     "npm-publish": "node ./npm-publish.js",
     "docs": "ydoc build"
   },
@@ -33,6 +33,7 @@
   "dependencies": {
     "ajv": "^5.5.1",
     "ajv-i18n": "^2.2.0",
+    "ali-oss": "^6.17.1",
     "axios": "0.18.1",
     "compare-versions": "^3.4.0",
     "copy-to-clipboard": "3.0.8",
@@ -41,7 +42,8 @@
     "deep-extend": "^0.5.0",
     "deref": "^0.7.3",
     "easy-json-schema": "0.0.2-beta",
-    "fs-extra": "^3.0.1",
+    "file-saver": "^2.0.5",
+    "fs-extra": "^10.1.0",
     "generate-schema": "^2.6.0",
     "immer": "^1.1.1",
     "js-base64": "^2.3.2",
@@ -80,14 +82,16 @@
     "safeify": "^5.0.5",
     "sha.js": "2.4.9",
     "sha1": "1.1.1",
-    "swagger-client": "^3.5.1",
+    "swagger-client": "3.5.1",
     "tslib": "1.8.0",
     "underscore": "1.8.3",
     "url": "0.11.0",
     "vm2": "^3.8.4",
+    "webpack-aliyun-oss": "^0.5.8",
     "yapi-plugin-qsso": "^1.1.0"
   },
   "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
     "antd": "3.2.2",
     "anujs": "^1.2.6",
     "assets-webpack-plugin": "^3.5.1",
@@ -112,6 +116,7 @@
     "conventional-changelog-cli": "^2.1.1",
     "copy-webpack-plugin": "^4.0.1",
     "core-decorators": "^0.17.0",
+    "cross-env": "^7.0.3",
     "css-loader": "^0.28.4",
     "eslint": "^3.19.0",
     "eslint-loader": "^1.9.0",
@@ -183,6 +188,10 @@
   "engines": {
     "node": ">= 7.6.0",
     "npm": ">= 4.1.2"
+  },
+  "volta": {
+    "node": "12.22.8",
+    "yarn": "1.19.2"
   },
   "babel": {
     "presets": [
