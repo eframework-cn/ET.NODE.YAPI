@@ -77,7 +77,9 @@ class ProjectData extends Component {
       exportContent: 'all',
       isSwaggerUrl: false,
       swaggerUrl: '',
-      isWiki: false
+      isWiki: false,
+      protoList: [],
+      showUploadingProto: false,
     };
   }
   static propTypes = {
@@ -98,6 +100,15 @@ class ProjectData extends Component {
         this.setState({
           menuList: menuList,
           selectCatid: menuList[0]._id
+        });
+      }
+    });
+    axios.post(`/api/interface/list_proto`, { project: this.props.match.params.id }).then(data => {
+      if (data.data.errcode != 0) {
+        message.error(`协议列表错误: ${data.data.errmsg}`);
+      } else {
+        this.setState({
+          protoList: data.data.data,
         });
       }
     });
@@ -158,6 +169,41 @@ class ProjectData extends Component {
       };
     } else {
       message.error('请选择上传的默认分类');
+    }
+  };
+
+  // proto文件上传
+  handleProto = info => {
+    this.setState({ showUploadingProto: true });
+    let reader = new FileReader();
+    reader.readAsText(info.file);
+    reader.onload = async res => {
+      axios.post(`/api/interface/upload_proto`, {
+        project: this.props.match.params.id,
+        name: info.file.name,
+        file: res.target.result
+      }).then(data => {
+        if (data.data.errcode != 0) {
+          message.error(`${info.file.name} 协议上传失败: ${data.data.errmsg}`);
+        } else {
+          this.setState({
+            showUploadingProto: false,
+            protoList: data.data.data
+          })
+        }
+      });
+    };
+  };
+
+  changeProto = info => {
+    const status = info.file.status;
+    if (status !== 'uploading') {
+      console.log(info.file, info.fileList);
+    }
+    if (status === 'done') {
+      message.success(`${info.file.name} 文件上传成功`);
+    } else if (status === 'error') {
+      message.error(`${info.file.name} 文件上传失败`);
     }
   };
 
@@ -303,6 +349,15 @@ class ProjectData extends Component {
       onChange: this.uploadChange
     };
 
+    const uploadProto = {
+      name: 'uploadProto',
+      multiple: true,
+      showUploadList: false,
+      action: '/api/interface/updateProto',
+      customRequest: this.handleProto,
+      onChange: this.changeProto
+    };
+
     let exportUrl =
       this.state.curExportType &&
       exportDataModule[this.state.curExportType] &&
@@ -318,101 +373,165 @@ class ProjectData extends Component {
       <div className="g-row">
         <div className="m-panel">
           <div className="postman-dataImport">
-            <div className="dataImportCon">
+            <div className='dataImportCon'>
               <div>
-                <h3>
-                  数据导入&nbsp;
-                  <a
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    href="https://hellosean1025.github.io/yapi/documents/data.html"
+                <h3>数据协议</h3>
+              </div>
+              <div id='showDownLoad' style={{ overflow: 'scroll', height: '200px' }}>
+                {this.state.protoList.map(name => (
+                  <div key={name}>
+                    <a
+                      href='#'
+                      onClick={() => {
+                        axios.post(`/api/interface/get_proto`, { project: this.props.match.params.id, name: name }).then(data => {
+                          if (data.data.errcode != 0) {
+                            message.error(`${name} 协议下载失败: ${data.data.errmsg}`);
+                          } else {
+                            let buf = Buffer.from(data.data.data, "binary")
+                            let blob = new Blob([buf])
+                            if (window.navigator.msSaveOrOpenBlob) {
+                              navigator.msSaveBlob(blob, name)
+                            } else {
+                              let link = document.createElement("a")
+                              let body = document.querySelector("body")
+
+                              link.href = window.URL.createObjectURL(blob)
+                              link.download = name
+
+                              // fix Firefox
+                              link.style.display = "none"
+                              body.appendChild(link)
+
+                              link.click()
+                              body.removeChild(link)
+
+                              window.URL.revokeObjectURL(link.href)
+                            }
+                          }
+                        });
+                      }}
+                    >
+                      {name}
+                    </a>
+                    <br />
+                  </div>
+                ))}
+              </div>
+              <Spin spinning={this.state.showUploadingProto} tip="上传中...">
+                <div className='import-content' style={{ height: '170px' }}>
+                  <Dragger {...uploadProto}>
+                    <p className="ant-upload-drag-icon">
+                      <Icon type="inbox" />
+                    </p>
+                    <p className="ant-upload-text">点击或者拖拽文件到上传区域</p>
+                    <p
+                      className="ant-upload-hint"
+                      onClick={e => {
+                        e.stopPropagation();
+                      }}
+                    />
+                  </Dragger>
+                </div>
+              </Spin>
+            </div>
+
+            <div className="dataImportCon" style={{ marginLeft: '20px' }}>
+              <div style={{ overflow: 'scroll', height: '225px' }}>
+                <div>
+                  <h3>
+                    数据导入&nbsp;
+                    <a
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      href="https://hellosean1025.github.io/yapi/documents/data.html"
+                    >
+                      <Tooltip title="点击查看文档">
+                        <Icon type="question-circle-o" />
+                      </Tooltip>
+                    </a>
+                  </h3>
+                </div>
+                <div className="dataImportTile">
+                  <Select
+                    placeholder="请选择导入数据的方式"
+                    value={this.state.curImportType}
+                    onChange={this.handleImportType}
                   >
-                    <Tooltip title="点击查看文档">
-                      <Icon type="question-circle-o" />
-                    </Tooltip>
-                  </a>
-                </h3>
-              </div>
-              <div className="dataImportTile">
-                <Select
-                  placeholder="请选择导入数据的方式"
-                  value={this.state.curImportType}
-                  onChange={this.handleImportType}
-                >
-                  {Object.keys(importDataModule).map(name => {
-                    return (
-                      <Option key={name} value={name}>
-                        {importDataModule[name].name}
-                      </Option>
-                    );
-                  })}
-                </Select>
-              </div>
-              <div className="catidSelect">
-                <Select
-                  value={this.state.selectCatid + ''}
-                  showSearch
-                  style={{ width: '100%' }}
-                  placeholder="请选择数据导入的默认分类"
-                  optionFilterProp="children"
-                  onChange={this.selectChange.bind(this)}
-                  filterOption={(input, option) =>
-                    option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }
-                >
-                  {this.state.menuList.map((item, key) => {
-                    return (
-                      <Option key={key} value={item._id + ''}>
-                        {item.name}
-                      </Option>
-                    );
-                  })}
-                </Select>
-              </div>
-              <div className="dataSync">
-                <span className="label">
-                  数据同步&nbsp;
-                  <Tooltip
-                    title={
-                      <div>
-                        <h3 style={{ color: 'white' }}>普通模式</h3>
-                        <p>不导入已存在的接口</p>
-                        <br />
-                        <h3 style={{ color: 'white' }}>智能合并</h3>
-                        <p>
-                          已存在的接口，将合并返回数据的 response，适用于导入了 swagger
-                          数据，保留对数据结构的改动
-                        </p>
-                        <br />
-                        <h3 style={{ color: 'white' }}>完全覆盖</h3>
-                        <p>不保留旧数据，完全使用新数据，适用于接口定义完全交给后端定义</p>
-                      </div>
+                    {Object.keys(importDataModule).map(name => {
+                      return (
+                        <Option key={name} value={name}>
+                          {importDataModule[name].name}
+                        </Option>
+                      );
+                    })}
+                  </Select>
+                </div>
+                <div className="catidSelect">
+                  <Select
+                    value={this.state.selectCatid + ''}
+                    showSearch
+                    style={{ width: '100%' }}
+                    placeholder="请选择数据导入的默认分类"
+                    optionFilterProp="children"
+                    onChange={this.selectChange.bind(this)}
+                    filterOption={(input, option) =>
+                      option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }
                   >
-                    <Icon type="question-circle-o" />
-                  </Tooltip>{' '}
-                </span>
-                <Select value={this.state.dataSync} onChange={this.onChange}>
-                  <Option value="normal">普通模式</Option>
-                  <Option value="good">智能合并</Option>
-                  <Option value="merge">完全覆盖</Option>
-                </Select>
-
-                {/* <Switch checked={this.state.dataSync} onChange={this.onChange} /> */}
-              </div>
-              {this.state.curImportType === 'swagger' && (
+                    {this.state.menuList.map((item, key) => {
+                      return (
+                        <Option key={key} value={item._id + ''}>
+                          {item.name}
+                        </Option>
+                      );
+                    })}
+                  </Select>
+                </div>
                 <div className="dataSync">
                   <span className="label">
-                    开启url导入&nbsp;
-                    <Tooltip title="swagger url 导入">
+                    数据同步&nbsp;
+                    <Tooltip
+                      title={
+                        <div>
+                          <h3 style={{ color: 'white' }}>普通模式</h3>
+                          <p>不导入已存在的接口</p>
+                          <br />
+                          <h3 style={{ color: 'white' }}>智能合并</h3>
+                          <p>
+                            已存在的接口，将合并返回数据的 response，适用于导入了 swagger
+                            数据，保留对数据结构的改动
+                          </p>
+                          <br />
+                          <h3 style={{ color: 'white' }}>完全覆盖</h3>
+                          <p>不保留旧数据，完全使用新数据，适用于接口定义完全交给后端定义</p>
+                        </div>
+                      }
+                    >
                       <Icon type="question-circle-o" />
                     </Tooltip>{' '}
-                    &nbsp;&nbsp;
                   </span>
+                  <Select value={this.state.dataSync} onChange={this.onChange}>
+                    <Option value="normal">普通模式</Option>
+                    <Option value="good">智能合并</Option>
+                    <Option value="merge">完全覆盖</Option>
+                  </Select>
 
-                  <Switch checked={this.state.isSwaggerUrl} onChange={this.handleUrlChange} />
+                  {/* <Switch checked={this.state.dataSync} onChange={this.onChange} /> */}
                 </div>
-              )}
+                {this.state.curImportType === 'swagger' && (
+                  <div className="dataSync">
+                    <span className="label">
+                      开启url导入&nbsp;
+                      <Tooltip title="swagger url 导入">
+                        <Icon type="question-circle-o" />
+                      </Tooltip>{' '}
+                      &nbsp;&nbsp;
+                    </span>
+
+                    <Switch checked={this.state.isSwaggerUrl} onChange={this.handleUrlChange} />
+                  </div>
+                )}
+              </div>
               {this.state.isSwaggerUrl ? (
                 <div className="import-content url-import-content">
                   <Input
@@ -429,7 +548,7 @@ class ProjectData extends Component {
                   </Button>
                 </div>
               ) : (
-                <div className="import-content">
+                <div className="import-content" style={{ height: '170px' }}>
                   <Spin spinning={this.state.showLoading} tip="上传中...">
                     <Dragger {...uploadMess}>
                       <p className="ant-upload-drag-icon">
@@ -485,7 +604,7 @@ class ProjectData extends Component {
                 {this.state.curExportType ? (
                   <div>
                     <p className="export-desc">{exportDataModule[this.state.curExportType].desc}</p>
-                    <a 
+                    <a
                       target="_blank"
                       rel="noopener noreferrer"
                       href={exportHref}>
@@ -516,7 +635,7 @@ class ProjectData extends Component {
             </div>
           </div>
         </div>
-      </div>
+      </div >
     );
   }
 }

@@ -2,6 +2,14 @@ module.exports = {
   PAGE_LIMIT: 10, // 默认每页展示10条数据
   NAME_LIMIT: 100, // 限制名称的字符长度(中文算两个长度)
   HTTP_METHOD: {
+    'CONN': {
+      request_body: true,
+      default_tab: 'body'
+    },
+    'CGI': {
+      request_body: true,
+      default_tab: 'body'
+    },
     'GET': {
       request_body: false,
       default_tab: 'query'

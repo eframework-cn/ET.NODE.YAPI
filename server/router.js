@@ -61,7 +61,7 @@ let routerConfig = {
       method: 'get'
     },
 
-    
+
     {
       action: 'list',
       path: 'list',
@@ -386,6 +386,21 @@ let routerConfig = {
     {
       action: 'schema2json',
       path: 'schema2json',
+      method: 'post'
+    },
+    {
+      action: 'uploadProto',
+      path: 'upload_proto',
+      method: 'post'
+    },
+    {
+      action: 'listProto',
+      path: 'list_proto',
+      method: 'post'
+    },
+    {
+      action: 'getProto',
+      path: 'get_proto',
       method: 'post'
     }
   ],

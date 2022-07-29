@@ -46,3 +46,5 @@ client/plugin-module.js
 /iconfont
 /static/prd
 /log
+/proto
+/init.lock
