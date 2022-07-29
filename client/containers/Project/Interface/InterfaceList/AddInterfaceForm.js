@@ -43,14 +43,14 @@ class AddInterfaceForm extends Component {
   render() {
     const { getFieldDecorator, getFieldsError } = this.props.form;
     const prefixSelector = getFieldDecorator('method', {
-      initialValue: 'GET'
+      initialValue: 'CONN'
     })(
       <Select style={{ width: 75 }}>
         {HTTP_METHOD_KEYS.map(item => {
           return <Option key={item} value={item}>{item}</Option>
         })}
       </Select>
-      );
+    );
     const formItemLayout = {
       labelCol: {
         xs: { span: 24 },
@@ -78,7 +78,7 @@ class AddInterfaceForm extends Component {
                 return <Option key={item._id} value={item._id + ""}>{item.name}</Option>
               })}
             </Select>
-            )}
+          )}
         </FormItem>
         <FormItem
           {...formItemLayout}
@@ -88,7 +88,7 @@ class AddInterfaceForm extends Component {
             rules: nameLengthLimit('接口')
           })(
             <Input placeholder="接口名称" />
-            )}
+          )}
         </FormItem>
 
         <FormItem
@@ -101,7 +101,7 @@ class AddInterfaceForm extends Component {
             }]
           })(
             <Input onBlur={this.handlePath} addonBefore={prefixSelector} placeholder="/path" />
-            )}
+          )}
         </FormItem>
         <FormItem
           {...formItemLayout}
