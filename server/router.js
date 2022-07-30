@@ -389,8 +389,8 @@ let routerConfig = {
       method: 'post'
     },
     {
-      action: 'uploadProto',
-      path: 'upload_proto',
+      action: 'pushProto',
+      path: 'push_proto',
       method: 'post'
     },
     {
@@ -399,8 +399,13 @@ let routerConfig = {
       method: 'post'
     },
     {
-      action: 'getProto',
-      path: 'get_proto',
+      action: 'delProto',
+      path: 'del_proto',
+      method: 'post'
+    },
+    {
+      action: 'pullProto',
+      path: 'pull_proto',
       method: 'post'
     }
   ],

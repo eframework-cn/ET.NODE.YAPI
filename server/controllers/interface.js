@@ -17,6 +17,8 @@ const fs = require('fs-extra');
 const path = require('path');
 const { pathExistsSync } = require('fs-extra');
 const { mkdirSync } = require('fs');
+const nzip = require('node-zip-dir');
+const { mkdirsSync } = require('fs-extra');
 
 // const annotatedCss = require("jsondiffpatch/public/formatters-styles/annotated.css");
 // const htmlCss = require("jsondiffpatch/public/formatters-styles/html.css");
@@ -1259,7 +1261,7 @@ class interfaceController extends baseController {
   }
 
   // 上传协议
-  async uploadProto(ctx) {
+  async pushProto(ctx) {
     try {
       let root = path.resolve("./proto")
       if (!pathExistsSync(root)) mkdirSync(root)
@@ -1284,16 +1286,63 @@ class interfaceController extends baseController {
     }
   }
 
-  // 下载协议
-  async getProto(ctx) {
+  // 删除协议
+  async delProto(ctx) {
     try {
-      let file = path.join(path.resolve("./proto"), ctx.params.project, ctx.params.name)
-      file = fs.readFileSync(file)
-      ctx.body = yapi.commons.resReturn(file)
+      let root = path.join(path.resolve("./proto"), ctx.params.project)
+      let names = ctx.params.names
+      for (let i = 0; i < names.length; i++) {
+        let f = path.join(root, names[i])
+        fs.unlinkSync(f)
+      }
+      this.listProto(ctx)
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message)
     }
   }
+
+  // 下载协议
+  async pullProto(ctx) {
+    try {
+      let root = path.join(path.resolve("./proto"), ctx.params.project)
+      let names = ctx.params.names
+      if (names == null || names.length == 0) {
+        throw new Error("zero names.length")
+      } else if (names.length == 1) {
+        let file = path.join(root, names[0])
+        file = fs.readFileSync(file)
+        ctx.body = yapi.commons.resReturn({ name: names[0], file: file })
+      } else {
+        let tmp = path.join(root, "tmp")
+        let zip = tmp + ".zip"
+        mkdirsSync(tmp)
+        for (let i = 0; i < names.length; i++) {
+          let f = path.join(root, names[i])
+          let t = path.join(tmp, names[i])
+          fs.writeFileSync(t, fs.readFileSync(f))
+        }
+        try {
+          await nzip.zip(tmp, zip)
+          let file = fs.readFileSync(zip)
+          ctx.body = yapi.commons.resReturn({ name: "proto-" + path.basename(root) + ".zip", file: file })
+        } catch (err) {
+          throw err
+        } finally {
+          fs.unlinkSync(zip)
+          fs.rmdirSync(tmp, { recursive: true, force: true })
+        }
+      }
+    } catch (err) {
+      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+    }
+  }
+
+  // 过滤消息ID
+  async filterHeader(ctx) {
+  }
+
+  // 过滤结构体
+  async filterStruct(ctx) { }
 }
 
 module.exports = interfaceController;

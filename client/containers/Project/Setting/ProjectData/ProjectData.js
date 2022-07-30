@@ -79,6 +79,7 @@ class ProjectData extends Component {
       swaggerUrl: '',
       isWiki: false,
       protoList: [],
+      checkedAllProto: false,
       showUploadingProto: false,
     };
   }
@@ -107,8 +108,14 @@ class ProjectData extends Component {
       if (data.data.errcode != 0) {
         message.error(`协议列表错误: ${data.data.errmsg}`);
       } else {
+        let protos = []
+        for (let i = 0; i < data.data.data.length; i++) {
+          let ele = data.data.data[i]
+          protos.push({ checked: false, name: ele })
+        }
         this.setState({
-          protoList: data.data.data,
+          protoList: protos,
+          checkedAllProto: false,
         });
       }
     });
@@ -178,7 +185,7 @@ class ProjectData extends Component {
     let reader = new FileReader();
     reader.readAsText(info.file);
     reader.onload = async res => {
-      axios.post(`/api/interface/upload_proto`, {
+      axios.post(`/api/interface/push_proto`, {
         project: this.props.match.params.id,
         name: info.file.name,
         file: res.target.result
@@ -186,9 +193,15 @@ class ProjectData extends Component {
         if (data.data.errcode != 0) {
           message.error(`${info.file.name} 协议上传失败: ${data.data.errmsg}`);
         } else {
+          let protos = []
+          for (let i = 0; i < data.data.data.length; i++) {
+            let ele = data.data.data[i]
+            protos.push({ checked: false, name: ele })
+          }
           this.setState({
             showUploadingProto: false,
-            protoList: data.data.data
+            protoList: protos,
+            checkedAllProto: false
           })
         }
       });
@@ -353,7 +366,7 @@ class ProjectData extends Component {
       name: 'uploadProto',
       multiple: true,
       showUploadList: false,
-      action: '/api/interface/updateProto',
+      action: '/api/interface/push_proto',
       customRequest: this.handleProto,
       onChange: this.changeProto
     };
@@ -377,41 +390,115 @@ class ProjectData extends Component {
               <div>
                 <h3>数据协议</h3>
               </div>
-              <div id='showDownLoad' style={{ overflow: 'scroll', height: '200px' }}>
-                {this.state.protoList.map(name => (
-                  <div key={name}>
-                    <a
-                      href='#'
-                      onClick={() => {
-                        axios.post(`/api/interface/get_proto`, { project: this.props.match.params.id, name: name }).then(data => {
-                          if (data.data.errcode != 0) {
-                            message.error(`${name} 协议下载失败: ${data.data.errmsg}`);
+              <div id="protoListBar" style={{ marginTop: "5px", "background": "#ffffff", "borderRadius": "2px" }}>
+                <Checkbox style={{ "marginLeft": "5px" }}
+                  checked={this.state.checkedAllProto} onClick={e => {
+                    this.state.checkedAllProto = !this.state.checkedAllProto
+                    for (let i = 0; i < this.state.protoList.length; i++) {
+                      let ele = this.state.protoList[i]
+                      ele.checked = this.state.checkedAllProto
+                    }
+                    this.setState({
+                      checkedAllProto: this.state.checkedAllProto,
+                      protoList: new Array().concat(this.state.protoList)
+                    })
+                  }} />
+                <a style={{ "marginLeft": "10px", "color": "black" }}>File</a>
+                <Button style={{ "marginLeft": "85px", "marginTop": "3px", "marginBottom": "3px", "height": "25px" }}
+                  onClick={e => {
+                    let names = []
+                    for (let i = 0; i < this.state.protoList.length; i++) {
+                      let ele = this.state.protoList[i]
+                      if (ele.checked) names.push(ele.name)
+                    }
+                    if (names.length == 0) {
+                      message.error("未选中任何文件")
+                    } else {
+                      axios.post(`/api/interface/pull_proto`, { project: this.props.match.params.id, names: names }).then(data => {
+                        if (data.data.errcode != 0) {
+                          message.error(`文件下载失败: ${data.data.errmsg}`);
+                        } else {
+                          let name = data.data.data.name
+                          let buf = Buffer.from(data.data.data.file, "binary")
+                          let blob = new Blob([buf])
+                          if (window.navigator.msSaveOrOpenBlob) {
+                            navigator.msSaveBlob(blob, name)
                           } else {
-                            let buf = Buffer.from(data.data.data, "binary")
-                            let blob = new Blob([buf])
-                            if (window.navigator.msSaveOrOpenBlob) {
-                              navigator.msSaveBlob(blob, name)
-                            } else {
-                              let link = document.createElement("a")
-                              let body = document.querySelector("body")
+                            let link = document.createElement("a")
+                            let body = document.querySelector("body")
 
-                              link.href = window.URL.createObjectURL(blob)
-                              link.download = name
+                            link.href = window.URL.createObjectURL(blob)
+                            link.download = name
 
-                              // fix Firefox
-                              link.style.display = "none"
-                              body.appendChild(link)
+                            // fix Firefox
+                            link.style.display = "none"
+                            body.appendChild(link)
 
-                              link.click()
-                              body.removeChild(link)
+                            link.click()
+                            body.removeChild(link)
 
-                              window.URL.revokeObjectURL(link.href)
-                            }
+                            window.URL.revokeObjectURL(link.href)
                           }
-                        });
-                      }}
-                    >
-                      {name}
+                        }
+                      })
+                    }
+                  }}>下载</Button>
+                <Button style={{ "marginLeft": "5px", "marginTop": "3px", "marginBottom": "3px", "height": "25px" }}
+                  onClick={e => {
+                    let names = []
+                    for (let i = 0; i < this.state.protoList.length; i++) {
+                      let ele = this.state.protoList[i]
+                      if (ele.checked) names.push(ele.name)
+                    }
+                    if (names.length == 0) {
+                      message.error("未选中任何文件")
+                    } else {
+                      let that = this
+                      const ref = confirm({
+                        title: '确定删除文件吗？该操作不可逆！',
+                        width: 600,
+                        okType: 'danger',
+                        iconType: 'exclamation-circle',
+                        className: 'dataImport-confirm',
+                        okText: '确认',
+                        cancelText: '取消',
+                        content: names.toString(),
+                        async onOk() {
+                          axios.post(`/api/interface/del_proto`, { project: that.props.match.params.id, names: names }).then(data => {
+                            if (data.data.errcode != 0) {
+                              message.error(`文件删除失败: ${data.data.errmsg}`);
+                            } else {
+                              let protos = []
+                              for (let i = 0; i < data.data.data.length; i++) {
+                                let ele = data.data.data[i]
+                                protos.push({ checked: false, name: ele })
+                              }
+                              that.setState({
+                                protoList: protos,
+                                checkedAllProto: false,
+                              });
+                            }
+                          })
+                        },
+                        onCancel() {
+                          ref.destroy();
+                        }
+                      });
+                    }
+                  }}>删除</Button>
+              </div>
+              <div id='protoList' style={{ "marginTop": "5px", overflow: 'scroll', height: '160px', "background": "#ffffff", "borderRadius": "2px" }}>
+                {this.state.protoList.map(proto => (
+                  <div key={proto.name}>
+                    <Checkbox style={{ "marginLeft": "5px" }} checked={proto.checked} onClick={e => {
+                      for (let i = 0; i < this.state.protoList.length; i++) {
+                        let ele = this.state.protoList[i]
+                        if (ele == proto) proto.checked = !proto.checked
+                      }
+                      this.setState({ protoList: new Array().concat(this.state.protoList) })
+                    }} />
+                    <a style={{ "marginLeft": "10px" }}>
+                      {proto.name}
                     </a>
                     <br />
                   </div>

@@ -52,10 +52,7 @@ class baseController {
       '/api/project/get',
       '/api/plugin/export',
       '/api/project/up',
-      '/api/plugin/exportSwagger',
-      '/api/interface/upload_proto',
-      '/api/interface/list_proto',
-      '/api/interface/get_proto',
+      '/api/plugin/exportSwagger'
     ];
 
     let params = Object.assign({}, ctx.query, ctx.request.body);
