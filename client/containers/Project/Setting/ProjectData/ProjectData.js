@@ -106,7 +106,7 @@ class ProjectData extends Component {
     });
     axios.post(`/api/interface/list_proto`, { project: this.props.match.params.id }).then(data => {
       if (data.data.errcode != 0) {
-        message.error(`协议列表错误: ${data.data.errmsg}`);
+        message.error(`文件列表错误: ${data.data.errmsg}`);
       } else {
         let protos = []
         for (let i = 0; i < data.data.data.length; i++) {
@@ -191,8 +191,9 @@ class ProjectData extends Component {
         file: res.target.result
       }).then(data => {
         if (data.data.errcode != 0) {
-          message.error(`${info.file.name} 协议上传失败: ${data.data.errmsg}`);
+          message.error(`文件上传失败: ${info.file.name}, ${data.data.errmsg}`);
         } else {
+          message.success(`文件上传成功: ${info.file.name}`);
           let protos = []
           for (let i = 0; i < data.data.data.length; i++) {
             let ele = data.data.data[i]
@@ -468,6 +469,7 @@ class ProjectData extends Component {
                             if (data.data.errcode != 0) {
                               message.error(`文件删除失败: ${data.data.errmsg}`);
                             } else {
+                              message.success(`文件删除成功`);
                               let protos = []
                               for (let i = 0; i < data.data.data.length; i++) {
                                 let ele = data.data.data[i]
