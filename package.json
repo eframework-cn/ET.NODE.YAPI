@@ -89,7 +89,8 @@
     "vm2": "^3.8.4",
     "webpack-aliyun-oss": "^0.5.8",
     "yapi-plugin-qsso": "^1.1.0",
-    "node-zip-dir": "1.0.2"
+    "node-zip-dir": "1.0.2",
+    "react-autocomplete-input": "1.0.18"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",

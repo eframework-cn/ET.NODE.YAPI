@@ -23,7 +23,6 @@ const { mkdirsSync } = require('fs-extra');
 // const annotatedCss = require("jsondiffpatch/public/formatters-styles/annotated.css");
 // const htmlCss = require("jsondiffpatch/public/formatters-styles/html.css");
 
-
 function handleHeaders(values) {
   let isfile = false,
     isHaveContentType = false;
@@ -65,7 +64,6 @@ function handleHeaders(values) {
   }
 }
 
-
 class interfaceController extends baseController {
   constructor(ctx) {
     super(ctx);
@@ -76,6 +74,10 @@ class interfaceController extends baseController {
     this.followModel = yapi.getInst(followModel);
     this.userModel = yapi.getInst(userModel);
     this.groupModel = yapi.getInst(groupModel);
+    this.cid = {};
+    this.cpb = {};
+    this.mid = {};
+    this.mpb = {};
 
     const minLengthStringField = {
       type: 'string',
@@ -1263,13 +1265,18 @@ class interfaceController extends baseController {
   // 上传协议
   async pushProto(ctx) {
     try {
+      let pid = ctx.params.project.toString()
       let root = path.resolve("./proto")
       if (!pathExistsSync(root)) mkdirSync(root)
-      root = path.join(root, ctx.params.project)
+      root = path.join(root, pid)
       if (!pathExistsSync(root)) mkdirSync(root)
       root = path.join(root, ctx.params.name)
       fs.writeFileSync(root, ctx.params.file)
       await this.listProto(ctx)
+      if (root.endsWith("cid.h")) this.cid[pid] = null
+      if (root.endsWith("cpb.proto")) this.cpb[pid] = null
+      if (root.endsWith("mid.h")) this.mid[pid] = null
+      if (root.endsWith("mpb.proto")) this.mpb[pid] = null
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message)
     }
@@ -1278,7 +1285,8 @@ class interfaceController extends baseController {
   // 列举协议
   async listProto(ctx) {
     try {
-      let root = path.join(path.resolve("./proto"), ctx.params.project)
+      let pid = ctx.params.project.toString()
+      let root = path.join(path.resolve("./proto"), pid)
       let files = fs.readdirSync(root)
       ctx.body = yapi.commons.resReturn(files)
     } catch (err) {
@@ -1289,7 +1297,8 @@ class interfaceController extends baseController {
   // 删除协议
   async delProto(ctx) {
     try {
-      let root = path.join(path.resolve("./proto"), ctx.params.project)
+      let pid = ctx.params.project.toString()
+      let root = path.join(path.resolve("./proto"), pid)
       let names = ctx.params.names
       for (let i = 0; i < names.length; i++) {
         let f = path.join(root, names[i])
@@ -1304,7 +1313,8 @@ class interfaceController extends baseController {
   // 下载协议
   async pullProto(ctx) {
     try {
-      let root = path.join(path.resolve("./proto"), ctx.params.project)
+      let pid = ctx.params.project.toString()
+      let root = path.join(path.resolve("./proto"), pid)
       let names = ctx.params.names
       if (names == null || names.length == 0) {
         throw new Error("zero names.length")
@@ -1338,11 +1348,115 @@ class interfaceController extends baseController {
   }
 
   // 过滤消息ID
-  async filterHeader(ctx) {
+  async filterID(ctx) {
+    try {
+      let pid = ctx.params.project.toString()
+      let root = path.join(path.resolve("./proto"), pid)
+      let hobj = ctx.params.cgi ? this.cid[pid] : this.mid[pid]
+      if (hobj == null) {
+        hobj = {}
+        let hfile = path.join(root, ctx.params.cgi ? "cid.h" : "mid.h")
+        let ctt = fs.readFileSync(hfile, "utf-8")
+        let lines = ctt.split("\n")
+        let beginParse = false
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i].trim()
+          if (line.startsWith("enum")) {
+            beginParse = true
+            continue
+          }
+          if (line.startsWith("/") || line == ""
+            || line.startsWith("{") || line.startsWith("}")
+            || line.replace(" ", "").startsWith("*") || line.replace(" ", "").startsWith("/")
+            || beginParse == false) {
+            continue
+          }
+          let comment = ""
+          let enumName = line.replace("\t", "").replace(" ", "")
+          if (enumName == "") continue
+          let index1 = enumName.indexOf("/")
+          if (index1 == 0) continue
+          if (index1 > 0) {
+            comment = enumName.substring(index1, enumName.length)
+            enumName = enumName.substring(0, index1)
+          }
+          enumName = enumName.replace("/", "")
+
+          let index2 = enumName.indexOf("=")
+          if (index2 > 0) {
+            try {
+              enumName = enumName.substring(0, index2)
+            } catch {
+              continue // ref enum value.  
+            }
+          }
+          enumName = enumName.replace(",", "").trim()
+          if (comment != "") comment = comment.replace("//", "").trim()
+          hobj[enumName] = comment
+        }
+        if (ctx.params.cgi) {
+          this.cid[pid] = hobj
+        } else {
+          this.mid[pid] = hobj
+        }
+      }
+      let rets = []
+      let str = ctx.params.str.toLowerCase()
+      for (let k in hobj) {
+        let v = hobj[k]
+        if (k.toLocaleLowerCase().indexOf(str) >= 0 || str == "") {
+          ctx.params.full ? rets.push({ name: k, comment: v }) : rets.push(k)
+        }
+      }
+      ctx.body = yapi.commons.resReturn(rets)
+    } catch (err) {
+      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+    }
   }
 
   // 过滤结构体
-  async filterStruct(ctx) { }
+  async filterPB(ctx) {
+    try {
+      let pid = ctx.params.project.toString()
+      let root = path.join(path.resolve("./proto"), pid)
+      let pobj = ctx.params.cgi ? this.cpb[pid] : this.mpb[pid]
+      if (pobj == null) {
+        pobj = {}
+        let pfile = path.join(root, ctx.params.cgi ? "cpb.proto" : "mpb.proto")
+        let ctt = fs.readFileSync(pfile, "utf-8")
+        let lines = ctt.split("\n")
+        let mname = ""
+        let nctt = ""
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i]
+          let tline = line.trim()
+          if (tline.startsWith("package ") || tline.startsWith("synatx ") || tline == "") {
+            continue
+          } else if (tline.startsWith("message ")) {
+            mname = tline.split("/")[0].replace("message ", "").replace(/ /g, "").replace(/\t/g, "").replace("{", "").trim()
+            nctt += tline + "\n"
+          } else if (tline.startsWith("}")) {
+            nctt += line + "\n"
+            pobj[mname] = nctt
+            nctt = ""
+          } else {
+            nctt += line + "\n"
+          }
+        }
+      }
+      let rets = []
+      let str = ctx.params.str.toLowerCase()
+      for (let k in pobj) {
+        let v = pobj[k]
+        if (k.toLocaleLowerCase().indexOf(str) >= 0 || str == "") {
+          ctx.params.full ? rets.push({ name: k, struct: v }) : rets.push(k)
+        }
+      }
+      ctx.body = yapi.commons.resReturn(rets)
+    } catch (err) {
+      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+    }
+  }
 }
 
 module.exports = interfaceController;

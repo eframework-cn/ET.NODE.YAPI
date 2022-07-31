@@ -407,6 +407,16 @@ let routerConfig = {
       action: 'pullProto',
       path: 'pull_proto',
       method: 'post'
+    },
+    {
+      action: 'filterID',
+      path: 'filter_id',
+      method: 'post'
+    },
+    {
+      action: 'filterPB',
+      path: 'filter_pb',
+      method: 'post'
     }
   ],
   log: [

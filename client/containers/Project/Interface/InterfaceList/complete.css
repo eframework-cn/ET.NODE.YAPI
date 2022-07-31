@@ -1,0 +1,55 @@
+.react-autocomplete {
+  border: 1px solid #dadada;
+  border-radius: 4px;
+  outline-color: #89c6fb;
+  padding-left: 10px;
+}
+
+.react-autocomplete {
+  border: 1px solid #dadada;
+  border-radius: 4px;
+  outline-color: #89c6fb;
+}
+
+.react-autocomplete-input {
+   background-clip: padding-box;
+   background-color: #fff;
+   border: 2px rgba(0,0,0,0.15);
+   bottom: auto;
+   display: block;
+   font-size: 10px;
+   list-style: none;
+   padding: 1px;
+   margin-top: 25px;
+   position: absolute;
+   text-align: left;
+   z-index: 20000;
+   overflow-y: scroll;
+   height: 300px;
+}
+
+.react-autocomplete-input > li {
+  cursor: pointer;
+  padding: 10px;
+  min-width: 200px;
+}
+
+.react-autocomplete-input > li.active {
+  background-color: #54aefc;
+  color: #fff;
+}
+
+input:-moz-placeholder,   
+textarea:-moz-placeholder {   
+    color: #b9b9b9;   
+}
+
+input:-ms-input-placeholder,   
+textarea:-ms-input-placeholder {   
+    color: #b9b9b9;   
+}
+
+input::-webkit-input-placeholder,   
+textarea::-webkit-input-placeholder {   
+    color: #b9b9b9;   
+}

@@ -1,11 +1,13 @@
 import React, { PureComponent as Component } from 'react'
 import PropTypes from 'prop-types'
 import { Form, Input, Select, Button } from 'antd';
-
+import axios from 'axios';
 import constants from '../../../../constants/variable.js'
 import { handleApiPath, nameLengthLimit } from '../../../../common.js'
 const HTTP_METHOD = constants.HTTP_METHOD;
 const HTTP_METHOD_KEYS = Object.keys(HTTP_METHOD);
+import TextInput from 'react-autocomplete-input';
+import './complete.css'
 
 const FormItem = Form.Item;
 const Option = Select.Option;
@@ -15,6 +17,16 @@ function hasErrors(fieldsError) {
 
 
 class AddInterfaceForm extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      curMethod: "CONN",
+      curIDOptions: [],
+      curPBOptions: [],
+    };
+  }
+
+
   static propTypes = {
     form: PropTypes.object,
     onSubmit: PropTypes.func,
@@ -29,7 +41,6 @@ class AddInterfaceForm extends Component {
         this.props.onSubmit(values, () => {
           this.props.form.resetFields();
         });
-
       }
     });
   }
@@ -42,15 +53,6 @@ class AddInterfaceForm extends Component {
   }
   render() {
     const { getFieldDecorator, getFieldsError } = this.props.form;
-    const prefixSelector = getFieldDecorator('method', {
-      initialValue: 'CONN'
-    })(
-      <Select style={{ width: 75 }}>
-        {HTTP_METHOD_KEYS.map(item => {
-          return <Option key={item} value={item}>{item}</Option>
-        })}
-      </Select>
-    );
     const formItemLayout = {
       labelCol: {
         xs: { span: 24 },
@@ -62,9 +64,7 @@ class AddInterfaceForm extends Component {
       }
     };
 
-
     return (
-
       <Form onSubmit={this.handleSubmit}>
         <FormItem
           {...formItemLayout}
@@ -80,6 +80,7 @@ class AddInterfaceForm extends Component {
             </Select>
           )}
         </FormItem>
+
         <FormItem
           {...formItemLayout}
           label="接口名称"
@@ -93,16 +94,115 @@ class AddInterfaceForm extends Component {
 
         <FormItem
           {...formItemLayout}
-          label="接口路径"
+          label="接口类型"
         >
-          {getFieldDecorator('path', {
-            rules: [{
-              required: true, message: '请输入接口路径!'
-            }]
+          {getFieldDecorator('method', {
+            initialValue: 'CONN'
           })(
-            <Input onBlur={this.handlePath} addonBefore={prefixSelector} placeholder="/path" />
+            <Select onChange={e => this.setState({ curMethod: e })}>
+              {HTTP_METHOD_KEYS.map(item => {
+                return <Option key={item} value={item}>{item}</Option>
+              })}
+            </Select>
           )}
         </FormItem>
+
+        {this.state.curMethod == "CONN" || this.state.curMethod == "CGI" ? (
+          <div>
+            <FormItem
+              {...formItemLayout}
+              label="请求接口"
+            >
+              {getFieldDecorator('req_id')(
+                <TextInput placeholder="接口枚举"
+                  className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
+                  autoComplete='off' trigger={["", " "]} spacer={''}
+                  matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                  options={this.state.curIDOptions} onRequestOptions={part => {
+                    axios.post(`/api/interface/filter_id`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                      if (data.data.errcode !== 0) {
+                        message.error(data.data.errmsg)
+                      } else {
+                        this.setState({ curIDOptions: data.data.data })
+                      }
+                    })
+                  }} />
+              )}
+            </FormItem>
+            <FormItem
+              {...formItemLayout}
+              label="请求数据"
+            >
+              {getFieldDecorator('req_pb')(<TextInput placeholder="接口数据"
+                className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
+                autoComplete='off' trigger={["", " "]} spacer={''}
+                matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                options={this.state.curPBOptions} onRequestOptions={part => {
+                  axios.post(`/api/interface/filter_pb`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                    if (data.data.errcode !== 0) {
+                      message.error(data.data.errmsg)
+                    } else {
+                      this.setState({ curPBOptions: data.data.data })
+                    }
+                  })
+                }} />)}
+            </FormItem>
+            {this.state.curMethod == "CONN" ? (
+              <FormItem
+                {...formItemLayout}
+                label="返回接口"
+              >
+                {getFieldDecorator('resp_id')(
+                  <TextInput placeholder="接口枚举"
+                    className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
+                    autoComplete='off' trigger={["", " "]} spacer={''}
+                    matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                    options={this.state.curIDOptions} onRequestOptions={part => {
+                      axios.post(`/api/interface/filter_id`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                        if (data.data.errcode !== 0) {
+                          message.error(data.data.errmsg)
+                        } else {
+                          this.setState({ curIDOptions: data.data.data })
+                        }
+                      })
+                    }} />
+                )}
+              </FormItem>
+            ) : ('')}
+            <FormItem
+              {...formItemLayout}
+              label="返回数据"
+            >
+              {getFieldDecorator('resp_pb')(<TextInput placeholder="接口数据"
+                className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
+                autoComplete='off' trigger={["", " "]} spacer={''}
+                matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                options={this.state.curPBOptions} onRequestOptions={part => {
+                  axios.post(`/api/interface/filter_pb`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                    if (data.data.errcode !== 0) {
+                      message.error(data.data.errmsg)
+                    } else {
+                      this.setState({ curPBOptions: data.data.data })
+                    }
+                  })
+                }} />)}
+            </FormItem>
+          </div>
+        ) : (
+          <FormItem
+            {...formItemLayout}
+            label="接口路径"
+          >
+            {getFieldDecorator('path', {
+              rules: [{
+                required: true, message: '请输入接口路径!'
+              }]
+            })(
+              <Input onBlur={this.handlePath} placeholder="/接口路径" />
+            )}
+          </FormItem>
+        )}
+
         <FormItem
           {...formItemLayout}
           label="注"
