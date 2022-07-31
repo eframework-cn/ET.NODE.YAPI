@@ -83,7 +83,7 @@ class InterfaceList extends Component {
       await this.props.fetchInterfaceList(option);
     } else if (isNaN(params.actionId)) {
       let catid = params.actionId.substr(4);
-      this.setState({catid: +catid});
+      this.setState({ catid: +catid });
       let option = {
         page: this.state.current,
         limit,
@@ -198,7 +198,7 @@ class InterfaceList extends Component {
   render() {
     let tag = this.props.curProject.tag;
     let tagFilter = tag.map(item => {
-      return {text: item.name, value: item.name};
+      return { text: item.name, value: item.name };
     });
 
     const columns = [
@@ -267,7 +267,7 @@ class InterfaceList extends Component {
         }
       },
       {
-        title: '状态',
+        title: '接口状态',
         dataIndex: 'status',
         key: 'status',
         width: 24,
@@ -301,7 +301,7 @@ class InterfaceList extends Component {
         onFilter: (value, record) => record.status.indexOf(value) === 0
       },
       {
-        title: 'tag',
+        title: '接口标签',
         dataIndex: 'tag',
         key: 'tag',
         width: 14,

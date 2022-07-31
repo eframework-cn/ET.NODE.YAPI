@@ -17,7 +17,7 @@ const jSchema = require('json-schema-editor-visual');
 const ResBodySchema = jSchema({ lang: 'zh_CN', mock: MOCK_SOURCE });
 const ReqBodySchema = jSchema({ lang: 'zh_CN', mock: MOCK_SOURCE });
 const TabPane = Tabs.TabPane;
-
+import TextInput from 'react-autocomplete-input';
 
 require('common/tui-editor/dist/tui-editor.min.css'); // editor ui
 require('common/tui-editor/dist/tui-editor-contents.min.css'); // editor content
@@ -206,7 +206,7 @@ class InterfaceEditForm extends Component {
         req_radio_type: 'req-query',
         custom_field_value: '',
         api_opened: false,
-        visible: false
+        visible: false,
       },
       curdata
     );
@@ -215,7 +215,6 @@ class InterfaceEditForm extends Component {
   constructor(props) {
     super(props);
     const { curdata } = this.props;
-    // console.log('custom_field1', this.props.custom_field);
     this.state = this.initState(curdata);
   }
 
@@ -377,11 +376,14 @@ class InterfaceEditForm extends Component {
       req_radio_type: HTTP_METHOD[this.state.method].request_body ? 'req-body' : 'req-query'
     });
 
-    this.mockPreview = mockEditor({
-      container: 'mock-preview',
-      data: '',
-      readOnly: true
-    });
+    if (this.state.method == "CONN" || this.state.method == "CGI") {
+    } else {
+      this.mockPreview = mockEditor({
+        container: 'mock-preview',
+        data: '',
+        readOnly: true
+      });
+    }
 
     this.editor = new Editor({
       el: document.querySelector('#desc'),
@@ -598,6 +600,7 @@ class InterfaceEditForm extends Component {
   };
 
   render() {
+    console.log(this.props)
     const { getFieldDecorator } = this.props.form;
     const { custom_field, projectMsg } = this.props;
 
@@ -827,13 +830,6 @@ class InterfaceEditForm extends Component {
             基本设置
           </h2>
           <div className="panel-sub">
-            <FormItem className="interface-edit-item" {...formItemLayout} label="接口名称">
-              {getFieldDecorator('title', {
-                initialValue: this.state.title,
-                rules: nameLengthLimit('接口')
-              })(<Input id="title" placeholder="接口名称" />)}
-            </FormItem>
-
             <FormItem className="interface-edit-item" {...formItemLayout} label="选择分类">
               {getFieldDecorator('catid', {
                 initialValue: this.state.catid + '',
@@ -851,81 +847,120 @@ class InterfaceEditForm extends Component {
               )}
             </FormItem>
 
-            <FormItem
-              className="interface-edit-item"
-              {...formItemLayout}
-              label={
-                <span>
-                  接口路径&nbsp;
-                  <Tooltip
-                    title={
-                      <div>
-                        <p>
-                          1. 支持动态路由,例如:
-                          {DEMOPATH}
-                        </p>
-                        <p>
-                          2. 支持 ?controller=xxx 的QueryRouter,非router的Query参数请定义到
-                          Request设置-&#62;Query
-                        </p>
-                      </div>
-                    }
-                  >
-                    <Icon type="question-circle-o" style={{ width: '10px' }} />
-                  </Tooltip>
-                </span>
-              }
-            >
-              <InputGroup compact>
+            <FormItem className="interface-edit-item" {...formItemLayout} label="接口名称">
+              {getFieldDecorator('title', {
+                initialValue: this.state.title,
+                rules: nameLengthLimit('接口')
+              })(<Input id="title" placeholder="接口名称" />)}
+            </FormItem>
+
+            <FormItem className="interface-edit-item" {...formItemLayout} label="接口类型">
+              {getFieldDecorator('method', {
+                initialValue: 'CONN'
+              })(
                 <Select
                   value={this.state.method}
-                  onChange={this.onChangeMethod}
-                  style={{ width: '15%' }}
-                >
+                  onChange={this.onChangeMethod}>
                   {HTTP_METHOD_KEYS.map(item => {
-                    return (
-                      <Option key={item} value={item}>
-                        {item}
-                      </Option>
-                    );
+                    return <Option key={item} value={item}>{item}</Option>
                   })}
                 </Select>
+              )}
+            </FormItem>
 
-                <Tooltip
-                  title="接口基本路径，可在 项目设置 里修改"
-                  style={{
-                    display: this.props.basepath == '' ? 'block' : 'none'
-                  }}
-                >
-                  <Input
-                    disabled
-                    value={this.props.basepath}
-                    readOnly
-                    onChange={() => { }}
-                    style={{ width: '25%' }}
-                  />
-                </Tooltip>
+            {this.state.method == "CONN" || this.state.method == "CGI" ? (
+              <div>
+                <FormItem className="interface-edit-item" {...formItemLayout} label="请求接口">
+                  {getFieldDecorator('req_id', {
+                    initialValue: this.state.req_id,
+                  })(
+                    <TextInput placeholder="接口枚举"
+                      className='react-autocomplete' Component={'input'} style={{ width: "540px", height: "33px" }}
+                      autoComplete='off' trigger={["", " "]} spacer={''}
+                      matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                      options={this.state.curIDOptions} onRequestOptions={part => {
+                        axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                          if (data.data.errcode !== 0) {
+                            message.error(data.data.errmsg)
+                          } else {
+                            this.setState({ curIDOptions: data.data.data })
+                          }
+                        })
+                      }} />
+                  )}
+                </FormItem>
+                <FormItem className="interface-edit-item" {...formItemLayout} label="请求数据">
+                  {getFieldDecorator('req_pb', {
+                    initialValue: this.state.req_pb,
+                  })(<TextInput placeholder="接口数据"
+                    className='react-autocomplete' Component={'input'} style={{ width: "540px", height: "33px" }}
+                    autoComplete='off' trigger={["", " "]} spacer={''}
+                    matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                    options={this.state.curPBOptions} onRequestOptions={part => {
+                      axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                        if (data.data.errcode !== 0) {
+                          message.error(data.data.errmsg)
+                        } else {
+                          this.setState({ curPBOptions: data.data.data })
+                        }
+                      })
+                    }} />)}
+                </FormItem>
+                {this.state.method == "CONN" ? (
+                  <FormItem className="interface-edit-item" {...formItemLayout} label="返回接口">
+                    {getFieldDecorator('resp_id', {
+                      initialValue: this.state.resp_id,
+                    })(
+                      <TextInput placeholder="接口枚举"
+                        className='react-autocomplete' Component={'input'} style={{ width: "540px", height: "33px" }}
+                        autoComplete='off' trigger={["", " "]} spacer={''}
+                        matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                        options={this.state.curIDOptions} onRequestOptions={part => {
+                          axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                            if (data.data.errcode !== 0) {
+                              message.error(data.data.errmsg)
+                            } else {
+                              this.setState({ curIDOptions: data.data.data })
+                            }
+                          })
+                        }} />
+                    )}
+                  </FormItem>
+                ) : ('')}
+                <FormItem className="interface-edit-item" {...formItemLayout} label="返回数据">
+                  {getFieldDecorator('resp_pb', {
+                    initialValue: this.state.resp_pb,
+                  })(<TextInput placeholder="接口数据"
+                    className='react-autocomplete' Component={'input'} style={{ width: "540px", height: "33px" }}
+                    autoComplete='off' trigger={["", " "]} spacer={''}
+                    matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
+                    options={this.state.curPBOptions} onRequestOptions={part => {
+                      axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                        if (data.data.errcode !== 0) {
+                          message.error(data.data.errmsg)
+                        } else {
+                          this.setState({ curPBOptions: data.data.data })
+                        }
+                      })
+                    }} />)}
+                </FormItem>
+              </div>
+            ) : (
+              <FormItem className="interface-edit-item" {...formItemLayout} label="接口路径">
                 {getFieldDecorator('path', {
                   initialValue: this.state.path,
-                  rules: [
-                    {
-                      required: true,
-                      message: '请输入接口路径!'
-                    }
-                  ]
+                  rules: [{
+                    required: true, message: '请输入接口路径!'
+                  }]
                 })(
-                  <Input onChange={this.handlePath} placeholder="/path" style={{ width: '60%' }} />
+                  <Input onBlur={this.handlePath} placeholder="/接口路径" />
                 )}
-              </InputGroup>
-              <Row className="interface-edit-item">
-                <Col span={24} offset={0}>
-                  {paramsList}
-                </Col>
-              </Row>
-            </FormItem>
-            <FormItem className="interface-edit-item" {...formItemLayout} label="Tag">
+              </FormItem>
+            )}
+
+            <FormItem className="interface-edit-item" {...formItemLayout} label="接口标签">
               {getFieldDecorator('tag', { initialValue: this.state.tag })(
-                <Select placeholder="请选择 tag " mode="multiple">
+                <Select placeholder="请选择标签 " mode="multiple">
                   {projectMsg.tag.map(item => {
                     return (
                       <Option value={item.name} key={item._id}>
@@ -933,15 +968,16 @@ class InterfaceEditForm extends Component {
                       </Option>
                     );
                   })}
-                  <Option value="tag设置" disabled style={{ cursor: 'pointer', color: '#2395f1' }}>
+                  <Option value="标签设置" disabled style={{ cursor: 'pointer', color: '#2395f1' }}>
                     <Button type="primary" onClick={this.props.onTagClick}>
-                      Tag设置
+                      标签设置
                     </Button>
                   </Option>
                 </Select>
               )}
             </FormItem>
-            <FormItem className="interface-edit-item" {...formItemLayout} label="状态">
+
+            <FormItem className="interface-edit-item" {...formItemLayout} label="接口状态">
               {getFieldDecorator('status', { initialValue: this.state.status })(
                 <Select>
                   <Option value="done">已完成</Option>
@@ -962,321 +998,326 @@ class InterfaceEditForm extends Component {
             )}
           </div>
 
-          <h2 className="interface-title">请求参数设置</h2>
-
-          <div className="container-radiogroup">
-            <RadioGroup
-              value={this.state.req_radio_type}
-              size="large"
-              className="radioGroup"
-              onChange={this.changeRadioGroup}
-            >
-              {HTTP_METHOD[this.state.method].request_body ? (
-                <RadioButton value="req-body">Body</RadioButton>
-              ) : null}
-              <RadioButton value="req-query">Query</RadioButton>
-              <RadioButton value="req-headers">Headers</RadioButton>
-            </RadioGroup>
-          </div>
-
-          <div className="panel-sub">
-            <FormItem className={'interface-edit-item ' + this.state.hideTabs.req.query}>
-              <Row type="flex" justify="space-around">
-                <Col span={12}>
-                  <Button size="small" type="primary" onClick={() => this.addParams('req_query')}>
-                    添加Query参数
-                  </Button>
-                </Col>
-                <Col span={12}>
-                  <div className="bulk-import" onClick={() => this.showBulk('req_query')}>
-                    批量添加
-                  </div>
-                </Col>
-              </Row>
-            </FormItem>
-
-            <Row className={'interface-edit-item ' + this.state.hideTabs.req.query}>
-              <Col>
-                <EasyDragSort
-                  data={() => this.props.form.getFieldValue('req_query')}
-                  onChange={this.handleDragMove('req_query')}
-                  onlyChild="easy_drag_sort_child"
+          {this.state.method == "CONN" || this.state.method == "CGI" ? ('') : (
+            <div>
+              {/* ----------- Request ------------- */}
+              <h2 className="interface-title">请求参数设置</h2>
+              <div className="container-radiogroup">
+                <RadioGroup
+                  value={this.state.req_radio_type}
+                  size="large"
+                  className="radioGroup"
+                  onChange={this.changeRadioGroup}
                 >
-                  {QueryList}
-                </EasyDragSort>
-              </Col>
-            </Row>
+                  {HTTP_METHOD[this.state.method].request_body ? (
+                    <RadioButton value="req-body">Body</RadioButton>
+                  ) : null}
+                  <RadioButton value="req-query">Query</RadioButton>
+                  <RadioButton value="req-headers">Headers</RadioButton>
+                </RadioGroup>
 
-            <FormItem className={'interface-edit-item ' + this.state.hideTabs.req.headers}>
-              <Button size="small" type="primary" onClick={() => this.addParams('req_headers')}>
-                添加Header
-              </Button>
-            </FormItem>
+              </div>
 
-            <Row className={'interface-edit-item ' + this.state.hideTabs.req.headers}>
-              <Col>
-                <EasyDragSort
-                  data={() => this.props.form.getFieldValue('req_headers')}
-                  onChange={this.handleDragMove('req_headers')}
-                  onlyChild="easy_drag_sort_child"
-                >
-                  {headerList}
-                </EasyDragSort>
-              </Col>
-            </Row>
-            {HTTP_METHOD[this.state.method].request_body ? (
-              <div>
-                <FormItem className={'interface-edit-item ' + this.state.hideTabs.req.body}>
-                  {getFieldDecorator('req_body_type', {
-                    initialValue: this.state.req_body_type
-                  })(
-                    <RadioGroup>
-                      <Radio value="form">form</Radio>
-                      <Radio value="json">json</Radio>
-                      <Radio value="file">file</Radio>
-                      <Radio value="raw">raw</Radio>
-                    </RadioGroup>
-                  )}
+              <div className="panel-sub">
+                <FormItem className={'interface-edit-item ' + this.state.hideTabs.req.query}>
+                  <Row type="flex" justify="space-around">
+                    <Col span={12}>
+                      <Button size="small" type="primary" onClick={() => this.addParams('req_query')}>
+                        添加Query参数
+                      </Button>
+                    </Col>
+                    <Col span={12}>
+                      <div className="bulk-import" onClick={() => this.showBulk('req_query')}>
+                        批量添加
+                      </div>
+                    </Col>
+                  </Row>
                 </FormItem>
+
+                <Row className={'interface-edit-item ' + this.state.hideTabs.req.query}>
+                  <Col>
+                    <EasyDragSort
+                      data={() => this.props.form.getFieldValue('req_query')}
+                      onChange={this.handleDragMove('req_query')}
+                      onlyChild="easy_drag_sort_child"
+                    >
+                      {QueryList}
+                    </EasyDragSort>
+                  </Col>
+                </Row>
+
+                <FormItem className={'interface-edit-item ' + this.state.hideTabs.req.headers}>
+                  <Button size="small" type="primary" onClick={() => this.addParams('req_headers')}>
+                    添加Header
+                  </Button>
+                </FormItem>
+
+                <Row className={'interface-edit-item ' + this.state.hideTabs.req.headers}>
+                  <Col>
+                    <EasyDragSort
+                      data={() => this.props.form.getFieldValue('req_headers')}
+                      onChange={this.handleDragMove('req_headers')}
+                      onlyChild="easy_drag_sort_child"
+                    >
+                      {headerList}
+                    </EasyDragSort>
+                  </Col>
+                </Row>
+                {HTTP_METHOD[this.state.method].request_body ? (
+                  <div>
+                    <FormItem className={'interface-edit-item ' + this.state.hideTabs.req.body}>
+                      {getFieldDecorator('req_body_type', {
+                        initialValue: this.state.req_body_type
+                      })(
+                        <RadioGroup>
+                          <Radio value="form">form</Radio>
+                          <Radio value="json">json</Radio>
+                          <Radio value="file">file</Radio>
+                          <Radio value="raw">raw</Radio>
+                        </RadioGroup>
+                      )}
+                    </FormItem>
+
+                    <Row
+                      className={
+                        'interface-edit-item ' +
+                        (this.props.form.getFieldValue('req_body_type') === 'form'
+                          ? this.state.hideTabs.req.body
+                          : 'hide')
+                      }
+                    >
+                      <Col style={{ minHeight: '50px' }}>
+                        <Row type="flex" justify="space-around">
+                          <Col span="12" className="interface-edit-item">
+                            <Button
+                              size="small"
+                              type="primary"
+                              onClick={() => this.addParams('req_body_form')}
+                            >
+                              添加form参数
+                            </Button>
+                          </Col>
+                          <Col span="12">
+                            <div className="bulk-import" onClick={() => this.showBulk('req_body_form')}>
+                              批量添加
+                            </div>
+                          </Col>
+                        </Row>
+                        <EasyDragSort
+                          data={() => this.props.form.getFieldValue('req_body_form')}
+                          onChange={this.handleDragMove('req_body_form')}
+                          onlyChild="easy_drag_sort_child"
+                        >
+                          {requestBodyList}
+                        </EasyDragSort>
+                      </Col>
+                    </Row>
+                  </div>
+                ) : null}
 
                 <Row
                   className={
                     'interface-edit-item ' +
-                    (this.props.form.getFieldValue('req_body_type') === 'form'
+                    (this.props.form.getFieldValue('req_body_type') === 'json'
                       ? this.state.hideTabs.req.body
                       : 'hide')
                   }
                 >
-                  <Col style={{ minHeight: '50px' }}>
-                    <Row type="flex" justify="space-around">
-                      <Col span="12" className="interface-edit-item">
-                        <Button
-                          size="small"
-                          type="primary"
-                          onClick={() => this.addParams('req_body_form')}
-                        >
-                          添加form参数
-                        </Button>
-                      </Col>
-                      <Col span="12">
-                        <div className="bulk-import" onClick={() => this.showBulk('req_body_form')}>
-                          批量添加
-                        </div>
-                      </Col>
-                    </Row>
-                    <EasyDragSort
-                      data={() => this.props.form.getFieldValue('req_body_form')}
-                      onChange={this.handleDragMove('req_body_form')}
-                      onlyChild="easy_drag_sort_child"
-                    >
-                      {requestBodyList}
-                    </EasyDragSort>
-                  </Col>
-                </Row>
-              </div>
-            ) : null}
-
-            <Row
-              className={
-                'interface-edit-item ' +
-                (this.props.form.getFieldValue('req_body_type') === 'json'
-                  ? this.state.hideTabs.req.body
-                  : 'hide')
-              }
-            >
-              <span>
-                JSON-SCHEMA:&nbsp;
-                {!projectMsg.is_json5 && (
-                  <Tooltip title="项目 -> 设置 开启 json5">
-                    <Icon type="question-circle-o" />{' '}
-                  </Tooltip>
-                )}
-              </span>
-              {getFieldDecorator('req_body_is_json_schema', {
-                valuePropName: 'checked',
-                initialValue: this.state.req_body_is_json_schema || !projectMsg.is_json5
-              })(
-                <Switch
-                  checkedChildren="开"
-                  unCheckedChildren="关"
-                  disabled={!projectMsg.is_json5}
-                />
-              )}
-
-              <Col style={{ marginTop: '5px' }} className="interface-edit-json-info">
-                {!this.props.form.getFieldValue('req_body_is_json_schema') ? (
                   <span>
-                    基于 Json5, 参数描述信息用注释的方式实现{' '}
-                    <Tooltip title={<pre>{Json5Example}</pre>}>
-                      <Icon type="question-circle-o" style={{ color: '#086dbf' }} />
-                    </Tooltip>
-                    “全局编辑”或 “退出全屏” 请按 F9
+                    JSON-SCHEMA:&nbsp;
+                    {!projectMsg.is_json5 && (
+                      <Tooltip title="项目 -> 设置 开启 json5">
+                        <Icon type="question-circle-o" />{' '}
+                      </Tooltip>
+                    )}
                   </span>
-                ) : (
-                  <ReqBodySchema
-                    onChange={text => {
-                      this.setState({
-                        req_body_other: text
-                      });
+                  {getFieldDecorator('req_body_is_json_schema', {
+                    valuePropName: 'checked',
+                    initialValue: this.state.req_body_is_json_schema || !projectMsg.is_json5
+                  })(
+                    <Switch
+                      checkedChildren="开"
+                      unCheckedChildren="关"
+                      disabled={!projectMsg.is_json5}
+                    />
+                  )}
 
-                      if (new Date().getTime() - this.startTime > 1000) {
-                        EditFormContext.props.changeEditStatus(true);
-                      }
-                    }}
-                    isMock={true}
-                    data={req_body_other_use_schema_editor}
-                  />
-                )}
-              </Col>
-              <Col>
-                {!this.props.form.getFieldValue('req_body_is_json_schema') && (
-                  <AceEditor
-                    className="interface-editor"
-                    data={this.state.req_body_other}
-                    onChange={this.handleReqBody}
-                    fullScreen={true}
-                  />
-                )}
-              </Col>
-            </Row>
-
-            {this.props.form.getFieldValue('req_body_type') === 'file' &&
-              this.state.hideTabs.req.body !== 'hide' ? (
-              <Row className="interface-edit-item">
-                <Col className="interface-edit-item-other-body">
-                  {getFieldDecorator('req_body_other', {
-                    initialValue: this.state.req_body_other
-                  })(<TextArea placeholder="" autosize={true} />)}
-                </Col>
-              </Row>
-            ) : null}
-            {this.props.form.getFieldValue('req_body_type') === 'raw' &&
-              this.state.hideTabs.req.body !== 'hide' ? (
-              <Row>
-                <Col>
-                  {getFieldDecorator('req_body_other', {
-                    initialValue: this.state.req_body_other
-                  })(<TextArea placeholder="" autosize={{ minRows: 8 }} />)}
-                </Col>
-              </Row>
-            ) : null}
-          </div>
-
-          {/* ----------- Response ------------- */}
-
-          <h2 className="interface-title">
-            返回数据设置&nbsp;
-            {!projectMsg.is_json5 && (
-              <Tooltip title="项目 -> 设置 开启 json5">
-                <Icon type="question-circle-o" className="tooltip" />{' '}
-              </Tooltip>
-            )}
-            {getFieldDecorator('res_body_is_json_schema', {
-              valuePropName: 'checked',
-              initialValue: this.state.res_body_is_json_schema || !projectMsg.is_json5
-            })(
-              <Switch
-                checkedChildren="json-schema"
-                unCheckedChildren="json"
-                disabled={!projectMsg.is_json5}
-              />
-            )}
-          </h2>
-          <div className="container-radiogroup">
-            {getFieldDecorator('res_body_type', {
-              initialValue: this.state.res_body_type
-            })(
-              <RadioGroup size="large" className="radioGroup">
-                <RadioButton value="json">JSON</RadioButton>
-                <RadioButton value="raw">RAW</RadioButton>
-              </RadioGroup>
-            )}
-          </div>
-          <div className="panel-sub">
-            <Row
-              className="interface-edit-item"
-              style={{
-                display:
-                  this.props.form.getFieldValue('res_body_type') === 'json' ? 'block' : 'none'
-              }}
-            >
-              <Col>
-                <Tabs size="large" defaultActiveKey="tpl" onChange={this.handleJsonType}>
-                  <TabPane tab="模板" key="tpl" />
-                  <TabPane tab="预览" key="preview" />
-                </Tabs>
-                <div style={{ marginTop: '10px' }}>
-                  {!this.props.form.getFieldValue('res_body_is_json_schema') ? (
-                    <div style={{ padding: '10px 0', fontSize: '15px' }}>
+                  <Col style={{ marginTop: '5px' }} className="interface-edit-json-info">
+                    {!this.props.form.getFieldValue('req_body_is_json_schema') ? (
                       <span>
-                        基于 mockjs 和 json5,使用注释方式写参数说明{' '}
+                        基于 Json5, 参数描述信息用注释的方式实现{' '}
                         <Tooltip title={<pre>{Json5Example}</pre>}>
                           <Icon type="question-circle-o" style={{ color: '#086dbf' }} />
-                        </Tooltip>{' '}
-                        ,具体使用方法请{' '}
-                        <span
-                          className="href"
-                          onClick={() =>
-                            window.open('https://hellosean1025.github.io/yapi/documents/mock.html', '_blank')
-                          }
-                        >
-                          查看文档
-                        </span>
+                        </Tooltip>
+                        “全局编辑”或 “退出全屏” 请按 F9
                       </span>
-                      ，“全局编辑”或 “退出全屏” 请按 <span style={{ fontWeight: '500' }}>F9</span>
-                    </div>
-                  ) : (
-                    <div style={{ display: this.state.jsonType === 'tpl' ? 'block' : 'none' }}>
-                      <ResBodySchema
+                    ) : (
+                      <ReqBodySchema
                         onChange={text => {
                           this.setState({
-                            res_body: text
+                            req_body_other: text
                           });
+
                           if (new Date().getTime() - this.startTime > 1000) {
                             EditFormContext.props.changeEditStatus(true);
                           }
                         }}
                         isMock={true}
-                        data={res_body_use_schema_editor}
+                        data={req_body_other_use_schema_editor}
                       />
-                    </div>
-                  )}
-                  {!this.props.form.getFieldValue('res_body_is_json_schema') &&
-                    this.state.jsonType === 'tpl' && (
+                    )}
+                  </Col>
+                  <Col>
+                    {!this.props.form.getFieldValue('req_body_is_json_schema') && (
                       <AceEditor
                         className="interface-editor"
-                        data={this.state.res_body}
-                        onChange={this.handleResBody}
-                        ref={editor => (this.resBodyEditor = editor)}
+                        data={this.state.req_body_other}
+                        onChange={this.handleReqBody}
                         fullScreen={true}
                       />
                     )}
-                  <div
-                    id="mock-preview"
-                    style={{
-                      backgroundColor: '#eee',
-                      lineHeight: '20px',
-                      minHeight: '300px',
-                      display: this.state.jsonType === 'preview' ? 'block' : 'none'
-                    }}
-                  />
-                </div>
-              </Col>
-            </Row>
+                  </Col>
+                </Row>
 
-            <Row
-              className="interface-edit-item"
-              style={{
-                display: this.props.form.getFieldValue('res_body_type') === 'raw' ? 'block' : 'none'
-              }}
-            >
-              <Col>
-                {getFieldDecorator('res_body', {
-                  initialValue: this.state.res_body
-                })(<TextArea style={{ minHeight: '150px' }} placeholder="" />)}
-              </Col>
-            </Row>
-          </div>
+                {this.props.form.getFieldValue('req_body_type') === 'file' &&
+                  this.state.hideTabs.req.body !== 'hide' ? (
+                  <Row className="interface-edit-item">
+                    <Col className="interface-edit-item-other-body">
+                      {getFieldDecorator('req_body_other', {
+                        initialValue: this.state.req_body_other
+                      })(<TextArea placeholder="" autosize={true} />)}
+                    </Col>
+                  </Row>
+                ) : null}
+                {this.props.form.getFieldValue('req_body_type') === 'raw' &&
+                  this.state.hideTabs.req.body !== 'hide' ? (
+                  <Row>
+                    <Col>
+                      {getFieldDecorator('req_body_other', {
+                        initialValue: this.state.req_body_other
+                      })(<TextArea placeholder="" autosize={{ minRows: 8 }} />)}
+                    </Col>
+                  </Row>
+                ) : null}
+              </div>
+
+              {/* ----------- Response ------------- */}
+
+              <h2 className="interface-title">
+                返回数据设置&nbsp;
+                {!projectMsg.is_json5 && (
+                  <Tooltip title="项目 -> 设置 开启 json5">
+                    <Icon type="question-circle-o" className="tooltip" />{' '}
+                  </Tooltip>
+                )}
+                {getFieldDecorator('res_body_is_json_schema', {
+                  valuePropName: 'checked',
+                  initialValue: this.state.res_body_is_json_schema || !projectMsg.is_json5
+                })(
+                  <Switch
+                    checkedChildren="json-schema"
+                    unCheckedChildren="json"
+                    disabled={!projectMsg.is_json5}
+                  />
+                )}
+              </h2>
+              <div className="container-radiogroup">
+                {getFieldDecorator('res_body_type', {
+                  initialValue: this.state.res_body_type
+                })(
+                  <RadioGroup size="large" className="radioGroup">
+                    <RadioButton value="json">JSON</RadioButton>
+                    <RadioButton value="raw">RAW</RadioButton>
+                  </RadioGroup>
+                )}
+              </div>
+              <div className="panel-sub">
+                <Row
+                  className="interface-edit-item"
+                  style={{
+                    display:
+                      this.props.form.getFieldValue('res_body_type') === 'json' ? 'block' : 'none'
+                  }}
+                >
+                  <Col>
+                    <Tabs size="large" defaultActiveKey="tpl" onChange={this.handleJsonType}>
+                      <TabPane tab="模板" key="tpl" />
+                      <TabPane tab="预览" key="preview" />
+                    </Tabs>
+                    <div style={{ marginTop: '10px' }}>
+                      {!this.props.form.getFieldValue('res_body_is_json_schema') ? (
+                        <div style={{ padding: '10px 0', fontSize: '15px' }}>
+                          <span>
+                            基于 mockjs 和 json5,使用注释方式写参数说明{' '}
+                            <Tooltip title={<pre>{Json5Example}</pre>}>
+                              <Icon type="question-circle-o" style={{ color: '#086dbf' }} />
+                            </Tooltip>{' '}
+                            ,具体使用方法请{' '}
+                            <span
+                              className="href"
+                              onClick={() =>
+                                window.open('https://hellosean1025.github.io/yapi/documents/mock.html', '_blank')
+                              }
+                            >
+                              查看文档
+                            </span>
+                          </span>
+                          ，“全局编辑”或 “退出全屏” 请按 <span style={{ fontWeight: '500' }}>F9</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: this.state.jsonType === 'tpl' ? 'block' : 'none' }}>
+                          <ResBodySchema
+                            onChange={text => {
+                              this.setState({
+                                res_body: text
+                              });
+                              if (new Date().getTime() - this.startTime > 1000) {
+                                EditFormContext.props.changeEditStatus(true);
+                              }
+                            }}
+                            isMock={true}
+                            data={res_body_use_schema_editor}
+                          />
+                        </div>
+                      )}
+                      {!this.props.form.getFieldValue('res_body_is_json_schema') &&
+                        this.state.jsonType === 'tpl' && (
+                          <AceEditor
+                            className="interface-editor"
+                            data={this.state.res_body}
+                            onChange={this.handleResBody}
+                            ref={editor => (this.resBodyEditor = editor)}
+                            fullScreen={true}
+                          />
+                        )}
+                      <div
+                        id="mock-preview"
+                        style={{
+                          backgroundColor: '#eee',
+                          lineHeight: '20px',
+                          minHeight: '300px',
+                          display: this.state.jsonType === 'preview' ? 'block' : 'none'
+                        }}
+                      />
+                    </div>
+                  </Col>
+                </Row>
+
+                <Row
+                  className="interface-edit-item"
+                  style={{
+                    display: this.props.form.getFieldValue('res_body_type') === 'raw' ? 'block' : 'none'
+                  }}
+                >
+                  <Col>
+                    {getFieldDecorator('res_body', {
+                      initialValue: this.state.res_body
+                    })(<TextArea style={{ minHeight: '150px' }} placeholder="" />)}
+                  </Col>
+                </Row>
+              </div>
+            </div>
+          )}
 
           {/* ----------- remark ------------- */}
 
