@@ -38,6 +38,7 @@ class AddInterfaceForm extends Component {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {
       if (!err) {
+        if (values["path"] == null) values["path"] = "/" + values["method"] + "-" + Date.now()
         this.props.onSubmit(values, () => {
           this.props.form.resetFields();
         });
@@ -52,6 +53,7 @@ class AddInterfaceForm extends Component {
     })
   }
   render() {
+    console.log(this.props)
     const { getFieldDecorator, getFieldsError } = this.props.form;
     const formItemLayout = {
       labelCol: {
@@ -119,7 +121,7 @@ class AddInterfaceForm extends Component {
                   autoComplete='off' trigger={["", " "]} spacer={''}
                   matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                   options={this.state.curIDOptions} onRequestOptions={part => {
-                    axios.post(`/api/interface/filter_id`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                    axios.post(`/api/interface/filter_id`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
                       if (data.data.errcode !== 0) {
                         message.error(data.data.errmsg)
                       } else {
@@ -138,7 +140,7 @@ class AddInterfaceForm extends Component {
                 autoComplete='off' trigger={["", " "]} spacer={''}
                 matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                 options={this.state.curPBOptions} onRequestOptions={part => {
-                  axios.post(`/api/interface/filter_pb`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                  axios.post(`/api/interface/filter_pb`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
                     if (data.data.errcode !== 0) {
                       message.error(data.data.errmsg)
                     } else {
@@ -158,7 +160,7 @@ class AddInterfaceForm extends Component {
                     autoComplete='off' trigger={["", " "]} spacer={''}
                     matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                     options={this.state.curIDOptions} onRequestOptions={part => {
-                      axios.post(`/api/interface/filter_id`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                      axios.post(`/api/interface/filter_id`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
                         if (data.data.errcode !== 0) {
                           message.error(data.data.errmsg)
                         } else {
@@ -178,7 +180,7 @@ class AddInterfaceForm extends Component {
                 autoComplete='off' trigger={["", " "]} spacer={''}
                 matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                 options={this.state.curPBOptions} onRequestOptions={part => {
-                  axios.post(`/api/interface/filter_pb`, { project: this.props.catid, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                  axios.post(`/api/interface/filter_pb`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
                     if (data.data.errcode !== 0) {
                       message.error(data.data.errmsg)
                     } else {

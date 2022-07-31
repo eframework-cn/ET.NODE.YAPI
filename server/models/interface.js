@@ -94,7 +94,11 @@ class interfaceModel extends baseModel {
       field3: String,
       api_opened: { type: Boolean, default: false },
       index: { type: Number, default: 0 },
-      tag: Array
+      tag: Array,
+      req_id: String,
+      req_pb: String,
+      resp_id: String,
+      resp_pb: String
     };
   }
 
@@ -244,7 +248,7 @@ class interfaceModel extends baseModel {
     limit = parseInt(limit);
     return this.model
       .find(option)
-      .sort({index: 1})
+      .sort({ index: 1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .select(

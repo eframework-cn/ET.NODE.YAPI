@@ -132,7 +132,11 @@ class interfaceController extends baseController {
       req_body_is_json_schema: 'string',
       res_body_is_json_schema: 'string',
       markdown: 'string',
-      tag: 'array'
+      tag: 'array',
+      req_id: 'string',
+      req_pb: 'string',
+      resp_id: 'string',
+      resp_pb: 'string'
     };
 
     this.schemaMap = {
