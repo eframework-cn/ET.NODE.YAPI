@@ -53,7 +53,6 @@ class AddInterfaceForm extends Component {
     })
   }
   render() {
-    console.log(this.props)
     const { getFieldDecorator, getFieldsError } = this.props.form;
     const formItemLayout = {
       labelCol: {
