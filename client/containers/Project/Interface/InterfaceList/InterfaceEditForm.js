@@ -600,7 +600,6 @@ class InterfaceEditForm extends Component {
   };
 
   render() {
-    console.log(this.props)
     const { getFieldDecorator } = this.props.form;
     const { custom_field, projectMsg } = this.props;
 

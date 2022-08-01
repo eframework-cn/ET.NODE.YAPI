@@ -2,7 +2,7 @@ import './View.scss';
 import React, { PureComponent as Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Table, Icon, Row, Col, Tooltip, message } from 'antd';
+import { Table, Icon, Row, Col, Tooltip, message, Input } from 'antd';
 import { Link } from 'react-router-dom';
 import AceEditor from 'client/components/AceEditor/AceEditor';
 import { formatTime, safeArray } from '../../../../common.js';
@@ -13,6 +13,7 @@ import copy from 'copy-to-clipboard';
 import SchemaTable from '../../../../components/SchemaTable/SchemaTable.js';
 
 const HTTP_METHOD = constants.HTTP_METHOD;
+const TextArea = Input.TextArea;
 
 @connect(state => {
   return {
@@ -424,6 +425,19 @@ class View extends Component {
             <div>
               <Row className="row">
                 <Col span={4} className="colKey">
+                  接口类型：
+                </Col>
+                <Col span={8} className="colValue">
+                  <span
+                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
+                    className="colValue tag-method"
+                  >
+                    {this.props.curData.method}
+                  </span>
+                </Col>
+              </Row>
+              <Row className="row">
+                <Col span={4} className="colKey">
                   请求接口：
                 </Col>
                 <Col span={8} className="colValue" onMouseEnter={this.enterItem} onMouseLeave={this.leaveItem}>
@@ -442,68 +456,66 @@ class View extends Component {
                     />
                   </Tooltip>
                 </Col>
+                <Col span={4} className="colKey">
+                  接口注释：
+                </Col>
+                <Col span={8} className="colValue" >
+                  <span
+                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
+                    className="colValue tag-method"
+                  >
+                    {this.props.curData.req_id_comment}
+                  </span>
+                </Col>
               </Row>
               <Row className="row">
                 <Col span={4} className="colKey">
                   请求数据：
                 </Col>
-                <Col span={8} className="colValue" onMouseEnter={this.enterItem} onMouseLeave={this.leaveItem}>
-                  <span
-                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                    className="colValue tag-method"
-                  >
-                    {this.props.curData.req_pb}
-                  </span>
-                  <Tooltip title="复制数据">
-                    <Icon
-                      type="copy"
-                      className="interface-url-icon"
-                      onClick={() => this.copyUrl(this.props.curData.req_pb)}
-                      style={{ display: this.state.enter ? 'inline-block' : 'none' }}
-                    />
-                  </Tooltip>
+                <Col span={8} className="colValue">
+                  <TextArea autosize={true} value={this.props.curData.req_pb} />
                 </Col>
               </Row>
-              <Row className="row">
-                <Col span={4} className="colKey">
-                  返回接口：
-                </Col>
-                <Col span={8} className="colValue" onMouseEnter={this.enterItem} onMouseLeave={this.leaveItem}>
-                  <span
-                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                    className="colValue tag-method"
-                  >
-                    {this.props.curData.resp_id}
-                  </span>
-                  <Tooltip title="复制接口">
-                    <Icon
-                      type="copy"
-                      className="interface-url-icon"
-                      onClick={() => this.copyUrl(this.props.curData.resp_id)}
-                      style={{ display: this.state.enter ? 'inline-block' : 'none' }}
-                    />
-                  </Tooltip>
-                </Col>
-              </Row>
+              {this.props.curData.method == "CONN" && (
+                <Row className="row">
+                  <Col span={4} className="colKey">
+                    返回接口：
+                  </Col>
+                  <Col span={8} className="colValue" onMouseEnter={this.enterItem} onMouseLeave={this.leaveItem}>
+                    <span
+                      style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
+                      className="colValue tag-method"
+                    >
+                      {this.props.curData.resp_id}
+                    </span>
+                    <Tooltip title="复制接口">
+                      <Icon
+                        type="copy"
+                        className="interface-url-icon"
+                        onClick={() => this.copyUrl(this.props.curData.resp_id)}
+                        style={{ display: this.state.enter ? 'inline-block' : 'none' }}
+                      />
+                    </Tooltip>
+                  </Col>
+                  <Col span={4} className="colKey">
+                    接口注释：
+                  </Col>
+                  <Col span={8} className="colValue" >
+                    <span
+                      style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
+                      className="colValue tag-method"
+                    >
+                      {this.props.curData.resp_id_comment}
+                    </span>
+                  </Col>
+                </Row>
+              )}
               <Row className="row">
                 <Col span={4} className="colKey">
                   返回数据：
                 </Col>
-                <Col span={8} className="colValue" onMouseEnter={this.enterItem} onMouseLeave={this.leaveItem}>
-                  <span
-                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                    className="colValue tag-method"
-                  >
-                    {this.props.curData.resp_pb}
-                  </span>
-                  <Tooltip title="复制数据">
-                    <Icon
-                      type="copy"
-                      className="interface-url-icon"
-                      onClick={() => this.copyUrl(this.props.curData.resp_pb)}
-                      style={{ display: this.state.enter ? 'inline-block' : 'none' }}
-                    />
-                  </Tooltip>
+                <Col span={8} className="colValue">
+                  <TextArea autosize={true} value={this.props.curData.resp_pb} />
                 </Col>
               </Row>
             </div>

@@ -100,10 +100,10 @@ class InterfaceEdit extends Component {
     try {
       s = new WebSocket(
         wsProtocol +
-          '://' +
-          domain +
-          '/api/interface/solve_conflict?id=' +
-          this.props.match.params.actionId
+        '://' +
+        domain +
+        '/api/interface/solve_conflict?id=' +
+        this.props.match.params.actionId
       );
       s.onopen = () => {
         this.WebSocket = s;
@@ -210,7 +210,7 @@ class InterfaceEdit extends Component {
         {this.state.status === 0 && '正在加载，请耐心等待...'}
 
         <Modal
-          title="Tag 设置"
+          title="标签设置"
           width={680}
           visible={this.state.visible}
           onOk={this.handleOk}

@@ -74,7 +74,7 @@ class ProjectTag extends Component {
         <Row key={index} className="tag-item">
           <Col span={6} className="item-name">
             <Input
-              placeholder={`请输入 ${name} 名称`}
+              placeholder={`请输入标签名称`}
               // style={{ width: '200px' }}
               value={item.name || ''}
               onChange={e => this.addHeader(e.target.value, index, name, 'name')}
@@ -82,7 +82,7 @@ class ProjectTag extends Component {
           </Col>
           <Col span={12}>
             <Input
-              placeholder="请输入tag 描述信息"
+              placeholder="请输入标签描述信息"
               style={{ width: '90%', marginRight: 8 }}
               onChange={e => this.handleChange(e.target.value, index, name, 'desc')}
               value={item.desc || ''}
