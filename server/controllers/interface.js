@@ -476,6 +476,58 @@ class interfaceController extends baseController {
       if (userinfo) {
         result.username = userinfo.username;
       }
+      if (result.method == "CONN" || result.method == "CGI") {
+        // req_id
+        if (result.req_id != "") {
+          let req_id_meta = this.getID(result.project_id, result.method == "CGI", result.req_id, true)
+          if (req_id_meta.length > 0) {
+            result.req_id_comment = req_id_meta[0].comment == "" ? "NONE" : req_id_meta[0].comment
+          } else {
+            result.req_id += "[MISSING]"
+            result.req_id_comment = "NONE"
+          }
+        } else {
+          result.req_id += "NONE"
+          result.req_id_comment = "NONE"
+        }
+        // resp_id
+        if (result.method == "CONN") {
+          if (result.resp_id != "") {
+            let resp_id_meta = this.getID(result.project_id, result.method == "CGI", result.resp_id, true)
+            if (resp_id_meta.length > 0) {
+              result.resp_id_comment = resp_id_meta[0].comment == "" ? "NONE" : resp_id_meta[0].comment
+            } else {
+              result.resp_id += "[MISSING]"
+              result.resp_id_comment = "NONE"
+            }
+          } else {
+            result.resp_id += "NONE"
+            result.resp_id_comment = "NONE"
+          }
+        }
+        // req_pb
+        if (result.req_pb != "") {
+          let req_pb_meta = this.getPB(result.project_id, result.method == "CGI", result.req_pb, true)
+          if (req_pb_meta.length > 0) {
+            result.req_pb_struct = req_pb_meta[0].struct == "" ? "NONE" : req_pb_meta[0].struct
+          } else {
+            result.req_pb_struct = result.req_pb + "[MISSING]"
+          }
+        } else {
+          result.req_pb_struct += "NONE"
+        }
+        // resp_pb
+        if (result.resp_pb != "") {
+          let resp_pb_meta = this.getPB(result.project_id, result.method == "CGI", result.resp_pb, true)
+          if (resp_pb_meta.length > 0) {
+            result.resp_pb_struct = resp_pb_meta[0].struct == "" ? "NONE" : resp_pb_meta[0].struct
+          } else {
+            result.resp_pb_struct = result.resp_pb + "[MISSING]"
+          }
+        } else {
+          result.resp_pb_struct += "NONE"
+        }
+      }
       ctx.body = yapi.commons.resReturn(result);
     } catch (e) {
       ctx.body = yapi.commons.resReturn(null, 402, e.message);
@@ -1351,15 +1403,17 @@ class interfaceController extends baseController {
     }
   }
 
-  // 过滤消息ID
-  async filterID(ctx) {
+  // 获取ID
+  getID(pid, cgi, str, full) {
+    let rets = []
     try {
-      let pid = ctx.params.project.toString()
+      pid = pid.toString()
+      str = str.toLowerCase()
       let root = path.join(path.resolve("./proto"), pid)
-      let hobj = ctx.params.cgi ? this.cid[pid] : this.mid[pid]
+      let hobj = cgi ? this.cid[pid] : this.mid[pid]
       if (hobj == null) {
         hobj = {}
-        let hfile = path.join(root, ctx.params.cgi ? "cid.h" : "mid.h")
+        let hfile = path.join(root, cgi ? "cid.h" : "mid.h")
         let ctt = fs.readFileSync(hfile, "utf-8")
         let lines = ctt.split("\n")
         let beginParse = false
@@ -1398,35 +1452,36 @@ class interfaceController extends baseController {
           if (comment != "") comment = comment.replace("//", "").trim()
           hobj[enumName] = comment
         }
-        if (ctx.params.cgi) {
+        if (cgi) {
           this.cid[pid] = hobj
         } else {
           this.mid[pid] = hobj
         }
       }
-      let rets = []
-      let str = ctx.params.str.toLowerCase()
       for (let k in hobj) {
         let v = hobj[k]
-        if (k.toLocaleLowerCase().indexOf(str) >= 0 || str == "") {
-          ctx.params.full ? rets.push({ name: k, comment: v }) : rets.push(k)
+        let t = k.toLocaleLowerCase()
+        if (full ? t == str : (t.indexOf(str) >= 0 || str == "")) {
+          full ? rets.push({ name: k, comment: v }) : rets.push(k)
         }
       }
-      ctx.body = yapi.commons.resReturn(rets)
     } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+      console.error(err)
     }
+    return rets
   }
 
-  // 过滤结构体
-  async filterPB(ctx) {
+  // 获取PB
+  getPB(pid, cgi, str, full) {
+    let rets = []
     try {
-      let pid = ctx.params.project.toString()
+      pid = pid.toString()
+      str = str.toLowerCase()
       let root = path.join(path.resolve("./proto"), pid)
-      let pobj = ctx.params.cgi ? this.cpb[pid] : this.mpb[pid]
+      let pobj = cgi ? this.cpb[pid] : this.mpb[pid]
       if (pobj == null) {
         pobj = {}
-        let pfile = path.join(root, ctx.params.cgi ? "cpb.proto" : "mpb.proto")
+        let pfile = path.join(root, cgi ? "cpb.proto" : "mpb.proto")
         let ctt = fs.readFileSync(pfile, "utf-8")
         let lines = ctt.split("\n")
         let mname = ""
@@ -1441,25 +1496,58 @@ class interfaceController extends baseController {
             nctt += tline + "\n"
           } else if (tline.startsWith("}")) {
             nctt += line + "\n"
-            pobj[mname] = nctt
+            pobj[mname] = nctt.trim()
             nctt = ""
           } else {
             nctt += line + "\n"
           }
         }
       }
-      let rets = []
-      let str = ctx.params.str.toLowerCase()
+      function wrap(ctt, visited) {
+        let nctt = ""
+        let lines = ctt.split("\n")
+        for (let i = 0; i < lines.length; i++) {
+          let line = lines[i].trim()
+          if (line.startsWith("required") ||
+            line.startsWith("optional") ||
+            line.startsWith("repeated")) {
+            line = line.replace(/\t/g, " ").replace(/  /g, " ").replace(/   /g, " ").replace(/    /g, " ").replace(/     /g, " ").replace(/      /g, " ")
+            let ss = line.split("=")
+            let s0 = ss[0].trim()
+            let aa = s0.split(" ")
+            let type = aa[1]
+            if (pobj[type] && !visited[type]) {
+              visited[type] = true
+              nctt += "\n\n"
+              nctt += wrap(pobj[type], visited)
+            }
+          }
+        }
+        return ctt + nctt
+      }
       for (let k in pobj) {
         let v = pobj[k]
-        if (k.toLocaleLowerCase().indexOf(str) >= 0 || str == "") {
-          ctx.params.full ? rets.push({ name: k, struct: v }) : rets.push(k)
+        let t = k.toLocaleLowerCase()
+        if (full ? t == str : (t.indexOf(str) >= 0 || str == "")) {
+          let visited = {}
+          visited[k] = true
+          full ? rets.push({ name: k, struct: wrap(v, visited) }) : rets.push(k)
         }
       }
-      ctx.body = yapi.commons.resReturn(rets)
     } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+      console.error(err)
     }
+    return rets
+  }
+
+  // 筛选ID
+  async filterID(ctx) {
+    ctx.body = yapi.commons.resReturn(this.getID(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full))
+  }
+
+  // 筛选PB
+  async filterPB(ctx) {
+    ctx.body = yapi.commons.resReturn(this.getPB(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full))
   }
 }
 

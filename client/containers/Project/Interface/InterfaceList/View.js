@@ -473,7 +473,7 @@ class View extends Component {
                   请求数据：
                 </Col>
                 <Col span={8} className="colValue">
-                  <TextArea autosize={true} value={this.props.curData.req_pb} />
+                  <TextArea autosize={true} value={this.props.curData.req_pb_struct} />
                 </Col>
               </Row>
               {this.props.curData.method == "CONN" && (
@@ -515,7 +515,7 @@ class View extends Component {
                   返回数据：
                 </Col>
                 <Col span={8} className="colValue">
-                  <TextArea autosize={true} value={this.props.curData.resp_pb} />
+                  <TextArea autosize={true} value={this.props.curData.resp_pb_struct} />
                 </Col>
               </Row>
             </div>
