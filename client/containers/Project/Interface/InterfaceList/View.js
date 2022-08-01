@@ -428,10 +428,7 @@ class View extends Component {
                   接口类型：
                 </Col>
                 <Col span={8} className="colValue">
-                  <span
-                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                    className="colValue tag-method"
-                  >
+                  <span>
                     {this.props.curData.method}
                   </span>
                 </Col>
@@ -441,10 +438,7 @@ class View extends Component {
                   请求接口：
                 </Col>
                 <Col span={8} className="colValue" onMouseEnter={this.enterItem} onMouseLeave={this.leaveItem}>
-                  <span
-                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                    className="colValue tag-method"
-                  >
+                  <span>
                     {this.props.curData.req_id}
                   </span>
                   <Tooltip title="复制接口">
@@ -460,10 +454,7 @@ class View extends Component {
                   接口注释：
                 </Col>
                 <Col span={8} className="colValue" >
-                  <span
-                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                    className="colValue tag-method"
-                  >
+                  <span>
                     {this.props.curData.req_id_comment}
                   </span>
                 </Col>
@@ -482,10 +473,7 @@ class View extends Component {
                     返回接口：
                   </Col>
                   <Col span={8} className="colValue" onMouseEnter={this.enterItem} onMouseLeave={this.leaveItem}>
-                    <span
-                      style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                      className="colValue tag-method"
-                    >
+                    <span>
                       {this.props.curData.resp_id}
                     </span>
                     <Tooltip title="复制接口">
@@ -501,10 +489,7 @@ class View extends Component {
                     接口注释：
                   </Col>
                   <Col span={8} className="colValue" >
-                    <span
-                      style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                      className="colValue tag-method"
-                    >
+                    <span>
                       {this.props.curData.resp_id_comment}
                     </span>
                   </Col>
@@ -531,10 +516,7 @@ class View extends Component {
                   onMouseEnter={this.enterItem}
                   onMouseLeave={this.leaveItem}
                 >
-                  <span
-                    style={{ color: methodColor.color, backgroundColor: methodColor.bac }}
-                    className="colValue tag-method"
-                  >
+                  <span>
                     {this.props.curData.method}
                   </span>
                   <span className="colValue">
