@@ -883,11 +883,7 @@ class InterfaceEditForm extends Component {
                       matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                       options={this.state.curIDOptions} onRequestOptions={part => {
                         axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
-                          if (data.data.errcode !== 0) {
-                            message.error(data.data.errmsg)
-                          } else {
-                            this.setState({ curIDOptions: data.data.data })
-                          }
+                          this.setState({ curIDOptions: data.data.data })
                         })
                       }} />
                   )}
@@ -901,11 +897,7 @@ class InterfaceEditForm extends Component {
                     matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                     options={this.state.curPBOptions} onRequestOptions={part => {
                       axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
-                        if (data.data.errcode !== 0) {
-                          message.error(data.data.errmsg)
-                        } else {
-                          this.setState({ curPBOptions: data.data.data })
-                        }
+                        this.setState({ curPBOptions: data.data.data })
                       })
                     }} />)}
                 </FormItem>
@@ -920,11 +912,7 @@ class InterfaceEditForm extends Component {
                         matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                         options={this.state.curIDOptions} onRequestOptions={part => {
                           axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
-                            if (data.data.errcode !== 0) {
-                              message.error(data.data.errmsg)
-                            } else {
-                              this.setState({ curIDOptions: data.data.data })
-                            }
+                            this.setState({ curIDOptions: data.data.data })
                           })
                         }} />
                     )}
@@ -939,11 +927,7 @@ class InterfaceEditForm extends Component {
                     matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                     options={this.state.curPBOptions} onRequestOptions={part => {
                       axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
-                        if (data.data.errcode !== 0) {
-                          message.error(data.data.errmsg)
-                        } else {
-                          this.setState({ curPBOptions: data.data.data })
-                        }
+                        this.setState({ curPBOptions: data.data.data })
                       })
                     }} />)}
                 </FormItem>
