@@ -120,13 +120,13 @@ class Content extends Component {
         component: Edit,
         name: '编辑'
       },
-      run: {
-        component: Run,
-        name: '运行'
-      }
+      // run: {
+      //   component: Run,
+      //   name: '运行'
+      // }
     };
 
-    plugin.emitHook('interface_tab', InterfaceTabs);
+    // plugin.emitHook('interface_tab', InterfaceTabs); // 不执行高级Mock
 
     const tabs = (
       <Tabs
