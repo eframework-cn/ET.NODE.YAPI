@@ -38,7 +38,11 @@ class AddInterfaceForm extends Component {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {
       if (!err) {
-        if (values["path"] == null) values["path"] = "/" + values["method"] + "-" + Date.now()
+        if (values.method == "CONN") {
+          values.path = "/REQ-" + values.req_id + "/RESP-" + values.resp_id
+        } else if (values.method == "CGI") {
+          values.path = "/REQ-" + values.req_id
+        }
         this.props.onSubmit(values, () => {
           this.props.form.resetFields();
         });
