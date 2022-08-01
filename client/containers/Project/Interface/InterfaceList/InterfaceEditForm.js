@@ -340,7 +340,11 @@ class InterfaceEditForm extends Component {
               return message.error('返回数据 json-schema 格式有误');
             }
           }
-
+          if (values.method == "CONN") {
+            values.path = "/" + values.req_id + "/" + values.resp_id
+          } else if (values.method == "CGI") {
+            values.path = "/" + values.req_id
+          }
           this.props.onSubmit(values);
           EditFormContext.props.changeEditStatus(false);
         }

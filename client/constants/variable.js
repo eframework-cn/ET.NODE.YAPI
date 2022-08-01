@@ -95,6 +95,14 @@ module.exports = {
   ],
   HTTP_REQUEST_HEADER: ["Accept", "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Datetime", "Authorization", "Cache-Control", "Connection", "Cookie", "Content-Disposition", "Content-Length", "Content-MD5", "Content-Type", "Date", "Expect", "From", "Host", "If-Match", "If-Modified-Since", "If-None-Match", "If-Range", "If-Unmodified-Since", "Max-Forwards", "Origin", "Pragma", "Proxy-Authorization", "Range", "Referer", "TE", "User-Agent", "Upgrade", "Via", "Warning", "X-Requested-With", "DNT", "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto", "Front-End-Https", "X-Http-Method-Override", "X-ATT-DeviceId", "X-Wap-Profile", "Proxy-Connection", "X-UIDH", "X-Csrf-Token"],
   METHOD_COLOR: {
+    conn: {
+      bac: "#85dbfd",
+      color: "#ffffff"
+    },
+    cgi: {
+      bac: "#c5c5c5",
+      color: "#ffffff"
+    },
     post: {
       bac: "#d2eafb",
       color: "#108ee9"
@@ -136,7 +144,7 @@ module.exports = {
     { name: 'id', mock: '@id' },
     { name: 'guid', mock: '@guid' },
     { name: '当前时间', mock: '@now' },
-    { name: '时间戳', mock: '@timestamp'},
+    { name: '时间戳', mock: '@timestamp' },
     { name: '日期', mock: '@date' },
     { name: '时间', mock: '@time' },
     { name: '日期时间', mock: '@datetime' },
