@@ -478,7 +478,7 @@ class interfaceController extends baseController {
       }
       if (result.method == "CONN" || result.method == "CGI") {
         // req_id
-        if (result.req_id != "") {
+        if (result.req_id) {
           let req_id_meta = this.getID(result.project_id, result.method == "CGI", result.req_id, true)
           if (req_id_meta.length > 0) {
             result.req_id_comment = req_id_meta[0].comment == "" ? "NONE" : req_id_meta[0].comment
@@ -487,12 +487,12 @@ class interfaceController extends baseController {
             result.req_id_comment = "NONE"
           }
         } else {
-          result.req_id += "NONE"
+          result.req_id = "NONE"
           result.req_id_comment = "NONE"
         }
         // resp_id
         if (result.method == "CONN") {
-          if (result.resp_id != "") {
+          if (result.resp_id) {
             let resp_id_meta = this.getID(result.project_id, result.method == "CGI", result.resp_id, true)
             if (resp_id_meta.length > 0) {
               result.resp_id_comment = resp_id_meta[0].comment == "" ? "NONE" : resp_id_meta[0].comment
@@ -501,12 +501,12 @@ class interfaceController extends baseController {
               result.resp_id_comment = "NONE"
             }
           } else {
-            result.resp_id += "NONE"
+            result.resp_id = "NONE"
             result.resp_id_comment = "NONE"
           }
         }
         // req_pb
-        if (result.req_pb != "") {
+        if (result.req_pb) {
           let req_pb_meta = this.getPB(result.project_id, result.method == "CGI", result.req_pb, true)
           if (req_pb_meta.length > 0) {
             result.req_pb_struct = req_pb_meta[0].struct == "" ? "NONE" : req_pb_meta[0].struct
@@ -514,10 +514,10 @@ class interfaceController extends baseController {
             result.req_pb_struct = result.req_pb + "[MISSING]"
           }
         } else {
-          result.req_pb_struct += "NONE"
+          result.req_pb_struct = "NONE"
         }
         // resp_pb
-        if (result.resp_pb != "") {
+        if (result.resp_pb) {
           let resp_pb_meta = this.getPB(result.project_id, result.method == "CGI", result.resp_pb, true)
           if (resp_pb_meta.length > 0) {
             result.resp_pb_struct = resp_pb_meta[0].struct == "" ? "NONE" : resp_pb_meta[0].struct
@@ -525,7 +525,7 @@ class interfaceController extends baseController {
             result.resp_pb_struct = result.resp_pb + "[MISSING]"
           }
         } else {
-          result.resp_pb_struct += "NONE"
+          result.resp_pb_struct = "NONE"
         }
       }
       ctx.body = yapi.commons.resReturn(result);
