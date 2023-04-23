@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -d ./.git ] || [ -f ./.git ]; then
-	TortoiseGitProc.exe /command:log /path:./
+	nohup TortoiseGitProc.exe /command:log /path:./ /closeonend:2 >/dev/null 2>&1 &
 else
-	TortoiseProc.exe /command:log /path:./
+	nohup TortoiseProc.exe /command:log /path:./ /closeonend:2 >/dev/null 2>&1 &
 fi

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -d ./.git ] || [ -f ./.git ]; then
-	TortoiseGitProc.exe /command:cleanup /path:./
+	nohup TortoiseGitProc.exe /command:cleanup /path:./ /closeonend:2 >/dev/null 2>&1 &
 else
-	TortoiseProc.exe /command:cleanup /path:./
+	nohup TortoiseProc.exe /command:cleanup /path:./ /closeonend:2 >/dev/null 2>&1 &
 fi

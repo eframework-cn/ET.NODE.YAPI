@@ -1,3 +1,3 @@
 #!/bin/sh
 
-Code ./
+nohup Code ./ >/dev/null 2>&1 &

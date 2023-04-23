@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -d ./.git ] || [ -f ./.git ]; then
-	TortoiseGitProc.exe /command:merge /path:./
+	nohup TortoiseGitProc.exe /command:merge /path:./ /closeonend:2 >/dev/null 2>&1 &
 else
-	TortoiseProc.exe /command:merge /path:./
+	nohup TortoiseProc.exe /command:merge /path:./ /closeonend:2 >/dev/null 2>&1 &
 fi
