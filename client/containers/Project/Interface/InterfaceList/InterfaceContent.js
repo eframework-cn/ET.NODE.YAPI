@@ -126,7 +126,7 @@ class Content extends Component {
       }
     };
 
-    plugin.emitHook('interface_tab', InterfaceTabs); // 不执行高级Mock
+    plugin.emitHook('interface_tab', InterfaceTabs);
 
     const tabs = (
       <Tabs
