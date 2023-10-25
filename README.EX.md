@@ -9,14 +9,19 @@
   - Registry: yarn config set registry https://registry.npm.taobao.org
 
 ## USAGE
-### DEVELOP
+### CODING
+- 经典MVC结构
+  - server/controllers：后端控制
+  - server/models：后端数据
+  - client/containers：前端视图
+  - client/reducer/modules：前端模块
+
+### DEPLOY
 - Client：
   - npm run build-client
 - Server：
   - npm run install-server（first time）
   - npm run start
-
-### DEPLOY
 
 ## MODIFY
 - client/constants/variable.js：新增CONN等HTTP_METHOD
