@@ -115,6 +115,16 @@ class ProjectList extends Component {
               })(<Input />)}
             </FormItem>
 
+            <FormItem {...formItemLayout} label="工作空间">
+              {getFieldDecorator('workspace', {
+                rules: [
+                  {
+                    required: true,
+                    message: '请设置项目工作空间!'
+                  }
+                ]
+              })(<Input />)}
+            </FormItem>
             <FormItem {...formItemLayout} label="所属分组">
               {getFieldDecorator('group', {
                 initialValue: this.state.currGroupId + '',
