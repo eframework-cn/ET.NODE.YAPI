@@ -36,7 +36,15 @@ class projectController extends baseController {
       type: 'string',
       enum: ['owner', 'dev', 'guest']
     };
-    const workspace = {
+    const proto_repo = {
+      type: 'string',
+      default: ''
+    };
+    const proto_branch = {
+      type: 'string',
+      default: ''
+    };
+    const repo_token = {
       type: 'string',
       default: ''
     };
@@ -60,7 +68,9 @@ class projectController extends baseController {
     this.schemaMap = {
       add: {
         '*name': name,
-        workspace: workspace,
+        proto_repo: proto_repo,
+        proto_branch: proto_branch,
+        repo_token: repo_token,
         basepath: basepath,
         '*group_id': group_id,
         group_name,
@@ -72,6 +82,8 @@ class projectController extends baseController {
       copy: {
         '*name': name,
         preName: name,
+        proto_repo: proto_repo,
+        proto_branch: proto_branch,
         basepath: basepath,
         '*group_id': group_id,
         _id: id,
@@ -213,7 +225,9 @@ class projectController extends baseController {
     let data = {
       name: params.name,
       desc: params.desc,
-      workspace: params.workspace,
+      proto_repo: params.proto_repo,
+      proto_branch: params.proto_branch,
+      repo_token: params.repo_token,
       basepath: params.basepath,
       members: [],
       project_type: params.project_type || 'private',
@@ -227,7 +241,6 @@ class projectController extends baseController {
       is_json5: false,
       env: [{ name: 'local', domain: 'http://127.0.0.1' }]
     };
-
     let result = await this.Model.save(data);
     let colInst = yapi.getInst(interfaceColModel);
     let catInst = yapi.getInst(interfaceCatModel);
@@ -782,6 +795,9 @@ class projectController extends baseController {
 
       params = yapi.commons.handleParams(params, {
         name: 'string',
+        proto_repo: 'string',
+        proto_branch: 'string',
+        repo_token: 'string',
         basepath: 'string',
         group_id: 'number',
         desc: 'string',

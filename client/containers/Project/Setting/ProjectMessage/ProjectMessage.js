@@ -141,7 +141,7 @@ class ProjectMessage extends Component {
               ]);
             }
           })
-          .catch(() => {});
+          .catch(() => { });
         form.resetFields();
       }
     });
@@ -187,7 +187,7 @@ class ProjectMessage extends Component {
         }
       },
       iconType: 'delete',
-      onCancel() {}
+      onCancel() { }
     });
   };
 
@@ -223,6 +223,15 @@ class ProjectMessage extends Component {
     await this.props.fetchGroupMsg(this.props.projectMsg.group_id);
   }
 
+  checkRepo = (rule, value, callback) => {
+    const str = value.toString();
+    if (!(str.startsWith("http") && str.endsWith(".git"))) {
+      callback("协议仓库不合法");
+    } else {
+      callback();
+    }
+  };
+
   render() {
     const { getFieldDecorator } = this.props.form;
     const { projectMsg, currGroup } = this.props;
@@ -235,6 +244,8 @@ class ProjectMessage extends Component {
     let initFormValues = {};
     const {
       name,
+      proto_repo,
+      proto_branch,
       basepath,
       desc,
       project_type,
@@ -246,6 +257,8 @@ class ProjectMessage extends Component {
     } = projectMsg;
     initFormValues = {
       name,
+      proto_repo,
+      proto_branch,
       basepath,
       desc,
       project_type,
@@ -318,12 +331,32 @@ class ProjectMessage extends Component {
             <FormItem {...formItemLayout} label="项目ID">
               <span>{this.props.projectMsg._id}</span>
             </FormItem>
+
             <FormItem {...formItemLayout} label="项目名称">
               {getFieldDecorator('name', {
                 initialValue: initFormValues.name,
                 rules: nameLengthLimit('项目')
               })(<Input />)}
             </FormItem>
+
+            <FormItem {...formItemLayout} label="协议仓库">
+              {getFieldDecorator('proto_repo', {
+                initialValue: initFormValues.proto_repo,
+                rules: [
+                  { required: false },
+                  { validator: this.checkRepo }
+                ]
+              })(<Input placeholder="https://$hostname/$namespace/$repo.git" />)}
+            </FormItem>
+
+            <FormItem {...formItemLayout} label="协议分支">
+              {getFieldDecorator('proto_branch', { initialValue: initFormValues.proto_branch || "master" })(<Input />)}
+            </FormItem>
+
+            <FormItem {...formItemLayout} label="仓库密钥">
+              {getFieldDecorator('repo_token', {})(<Input type="password" autocomplete="new-password" placeholder="personal access token for git repo" />)}
+            </FormItem>
+
             <FormItem {...formItemLayout} label="所属分组">
               {getFieldDecorator('group_id', {
                 initialValue: initFormValues.group_id + '',
@@ -377,7 +410,7 @@ class ProjectMessage extends Component {
                 </span>
               }
             >
-              <Input disabled value={mockUrl} onChange={() => {}} />
+              <Input disabled value={mockUrl} onChange={() => { }} />
             </FormItem>
 
             <FormItem {...formItemLayout} label="描述">
@@ -463,7 +496,7 @@ class ProjectMessage extends Component {
                     <Icon type="unlock" />公开<br />
                     <span className="radio-desc">任何人都可以索引并查看项目信息</span>
                   </Radio>}
-                  
+
                 </RadioGroup>
               )}
             </FormItem>

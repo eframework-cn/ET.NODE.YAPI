@@ -185,7 +185,9 @@ export function addProject(data) {
   let {
     name,
     prd_host,
-    workspace,
+    proto_repo,
+    proto_branch,
+    repo_token,
     basepath,
     desc,
     group_id,
@@ -201,7 +203,9 @@ export function addProject(data) {
   const param = {
     name,
     prd_host,
-    workspace,
+    proto_repo,
+    proto_branch,
+    repo_token,
     protocol,
     basepath,
     desc,
@@ -219,13 +223,16 @@ export function addProject(data) {
 
 // 修改项目
 export function updateProject(data) {
-  let { name, project_type, basepath, desc, _id, env, group_id, switch_notice, strice, is_json5, tag } = data;
+  let { name, project_type, proto_repo, proto_branch, repo_token, basepath, desc, _id, env, group_id, switch_notice, strice, is_json5, tag } = data;
 
   // 过滤项目名称中有html标签存在的情况
   name = htmlFilter(name);
   const param = {
     name,
     project_type,
+    proto_repo,
+    proto_branch,
+    repo_token,
     basepath,
     switch_notice,
     desc,

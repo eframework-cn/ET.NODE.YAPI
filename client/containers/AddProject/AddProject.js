@@ -103,6 +103,15 @@ class ProjectList extends Component {
     this.setState({ groupList: this.props.groupList });
   }
 
+  checkRepo = (rule, value, callback) => {
+    const str = value.toString();
+    if (!(str.startsWith("http") && str.endsWith(".git"))) {
+      callback("协议仓库不合法");
+    } else {
+      callback();
+    }
+  };
+
   render() {
     const { getFieldDecorator } = this.props.form;
     return (
@@ -115,16 +124,23 @@ class ProjectList extends Component {
               })(<Input />)}
             </FormItem>
 
-            <FormItem {...formItemLayout} label="工作空间">
-              {getFieldDecorator('workspace', {
+            <FormItem {...formItemLayout} label="协议仓库">
+              {getFieldDecorator('proto_repo', {
                 rules: [
-                  {
-                    required: true,
-                    message: '请设置项目工作空间!'
-                  }
+                  { required: false },
+                  { validator: this.checkRepo }
                 ]
-              })(<Input />)}
+              })(<Input placeholder="https://$hostname/$namespace/$repo.git" />)}
             </FormItem>
+
+            <FormItem {...formItemLayout} label="协议分支">
+              {getFieldDecorator('proto_branch', { initialValue: "master" })(<Input />)}
+            </FormItem>
+
+            <FormItem {...formItemLayout} label="仓库密钥">
+              {getFieldDecorator('repo_token', {})(<Input type="password" autocomplete="new-password" placeholder="personal access token for git repo" />)}
+            </FormItem>
+
             <FormItem {...formItemLayout} label="所属分组">
               {getFieldDecorator('group', {
                 initialValue: this.state.currGroupId + '',
