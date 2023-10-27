@@ -225,7 +225,8 @@ class ProjectMessage extends Component {
 
   checkRepo = (rule, value, callback) => {
     const str = value.toString();
-    if (!(str.startsWith("http") && str.endsWith(".git"))) {
+    const valid = str == "" || (str.startsWith("http") && str.endsWith(".git"))
+    if (!valid) {
       callback("协议仓库不合法");
     } else {
       callback();
@@ -428,8 +429,8 @@ class ProjectMessage extends Component {
               {...formItemLayout}
               label={
                 <span>
-                  tag 信息&nbsp;
-                  <Tooltip title="定义 tag 信息，过滤接口">
+                  标签信息&nbsp;
+                  <Tooltip title="定义标签信息，过滤接口">
                     <Icon type="question-circle-o" />
                   </Tooltip>
                 </span>

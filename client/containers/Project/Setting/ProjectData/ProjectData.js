@@ -52,6 +52,7 @@ function handleExportRouteParams(url, status, isWiki) {
 @connect(
   state => {
     return {
+      projectMsg: state.project.currProject,
       curCatid: -(-state.inter.curdata.catid),
       basePath: state.project.currProject.basepath,
       updateLogList: state.news.updateLogList,
@@ -68,6 +69,7 @@ class ProjectData extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      projectMsg: {},
       selectCatid: '',
       menuList: [],
       curImportType: 'swagger',
@@ -85,6 +87,7 @@ class ProjectData extends Component {
   }
   static propTypes = {
     match: PropTypes.object,
+    projectMsg: PropTypes.object,
     curCatid: PropTypes.number,
     basePath: PropTypes.string,
     saveImportData: PropTypes.func,
@@ -354,6 +357,10 @@ class ProjectData extends Component {
    * @memberof ProjectData
    */
   render() {
+    const { projectMsg } = this.props;
+
+    const singleMode = projectMsg.proto_repo == null || projectMsg.proto_repo == ""; // 单机模式
+
     const uploadMess = {
       name: 'interfaceData',
       multiple: true,
@@ -444,7 +451,7 @@ class ProjectData extends Component {
                       })
                     }
                   }}>下载</Button>
-                {this.props.match.params.proto_repo == null || this.props.match.params.proto_repo == "" ?
+                {singleMode ?
                   <Button style={{ "marginLeft": "5px", "marginTop": "3px", "marginBottom": "3px", "height": "25px" }}
                     onClick={e => {
                       let names = []
@@ -534,7 +541,7 @@ class ProjectData extends Component {
                       }
                     }}>更新</Button>}
               </div>
-              <div id='protoList' style={{ "marginTop": "5px", overflow: 'scroll', height: '160px', "background": "#ffffff", "borderRadius": "2px" }}>
+              <div id='protoList' style={{ "marginTop": "5px", overflow: 'scroll', height: singleMode ? '160px' : '345px', "background": "#ffffff", "borderRadius": "2px" }}>
                 {this.state.protoList.map(proto => (
                   <div key={proto.name}>
                     <Checkbox style={{ "marginLeft": "5px" }} checked={proto.checked} onClick={e => {
@@ -551,22 +558,24 @@ class ProjectData extends Component {
                   </div>
                 ))}
               </div>
-              <Spin spinning={this.state.showUploadingProto} tip="上传中...">
-                <div className='import-content' style={{ height: '170px' }}>
-                  <Dragger {...uploadProto}>
-                    <p className="ant-upload-drag-icon">
-                      <Icon type="inbox" />
-                    </p>
-                    <p className="ant-upload-text">点击或者拖拽文件到上传区域</p>
-                    <p
-                      className="ant-upload-hint"
-                      onClick={e => {
-                        e.stopPropagation();
-                      }}
-                    />
-                  </Dragger>
-                </div>
-              </Spin>
+              {singleMode &&
+                <Spin spinning={this.state.showUploadingProto} tip="上传中...">
+                  <div className='import-content' style={{ height: '170px' }}>
+                    <Dragger {...uploadProto}>
+                      <p className="ant-upload-drag-icon">
+                        <Icon type="inbox" />
+                      </p>
+                      <p className="ant-upload-text">点击或者拖拽文件到上传区域</p>
+                      <p
+                        className="ant-upload-hint"
+                        onClick={e => {
+                          e.stopPropagation();
+                        }}
+                      />
+                    </Dragger>
+                  </div>
+                </Spin>
+              }
             </div>
 
             <div className="dataImportCon" style={{ marginLeft: '20px' }}>

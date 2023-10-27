@@ -105,7 +105,8 @@ class ProjectList extends Component {
 
   checkRepo = (rule, value, callback) => {
     const str = value.toString();
-    if (!(str.startsWith("http") && str.endsWith(".git"))) {
+    const valid = str == "" || (str.startsWith("http") && str.endsWith(".git"))
+    if (!valid) {
       callback("协议仓库不合法");
     } else {
       callback();

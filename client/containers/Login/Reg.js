@@ -46,7 +46,7 @@ class Reg extends Component {
         this.props.regActions(values).then(res => {
           if (res.payload.data.errcode == 0) {
             this.props.history.replace('/group');
-            message.success('注册成功! ');
+            message.success('注册成功!');
           }
         });
       }
@@ -56,7 +56,7 @@ class Reg extends Component {
   checkPassword = (rule, value, callback) => {
     const form = this.props.form;
     if (value && value !== form.getFieldValue('password')) {
-      callback('两次输入的密码不一致啊!');
+      callback('两次输入的密码不一致!');
     } else {
       callback();
     }
