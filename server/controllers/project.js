@@ -14,6 +14,7 @@ const followModel = require('../models/follow.js');
 const tokenModel = require('../models/token.js');
 const { getToken } = require('../utils/token')
 const sha = require('sha.js');
+const crypto = require('crypto');
 const axios = require('axios').default;
 
 class projectController extends baseController {
@@ -162,6 +163,20 @@ class projectController extends baseController {
     return false;
   }
 
+  aseEncode(data) {
+    const cipher = crypto.createCipher('aes192', "project.secrect");
+    let crypted = cipher.update(data, 'utf-8', 'hex');
+    crypted += cipher.final('hex');
+    return crypted;
+  }
+
+  aseDecode(data) {
+    const decipher = crypto.createDecipher('aes192', "project.secrect");
+    let decrypted = decipher.update(data, 'hex', 'utf-8');
+    decrypted += decipher.final('utf-8');
+    return decrypted;
+  }
+
   /**
    * 判断分组名称是否重复
    * @interface /project/check_project_name
@@ -241,6 +256,7 @@ class projectController extends baseController {
       is_json5: false,
       env: [{ name: 'local', domain: 'http://127.0.0.1' }]
     };
+    data.repo_token = this.aseEncode(data.repo_token)
     let result = await this.Model.save(data);
     let colInst = yapi.getInst(interfaceColModel);
     let catInst = yapi.getInst(interfaceCatModel);
@@ -305,6 +321,7 @@ class projectController extends baseController {
       if ((await this.checkAuth(params.group_id, 'group', 'edit')) !== true) {
         return (ctx.body = yapi.commons.resReturn(null, 405, '没有权限'));
       }
+      let copyProject = await this.Model.get(copyId);
 
       params.basepath = params.basepath || '';
 
@@ -317,6 +334,7 @@ class projectController extends baseController {
       });
 
       delete data._id;
+      data.repo_token = copyProject.repo_token;
       let result = await this.Model.save(data);
       let colInst = yapi.getInst(interfaceColModel);
       let catInst = yapi.getInst(interfaceCatModel);
@@ -367,7 +385,6 @@ class projectController extends baseController {
       }
 
       // 增加member
-      let copyProject = await this.Model.get(copyId);
       let copyProjectMembers = copyProject.members;
 
       let uid = this.getUid();
@@ -838,7 +855,12 @@ class projectController extends baseController {
       };
 
       data = Object.assign({}, data, params);
-
+      if (data.repo_token == null || data.repo_token == "") {
+        let odata = await this.Model.get(id);
+        data.repo_token = odata.repo_token
+      } else {
+        data.repo_token = this.aseEncode(data.repo_token)
+      }
       let result = await this.Model.up(id, data);
       let username = this.getUsername();
       yapi.commons.saveLog({
