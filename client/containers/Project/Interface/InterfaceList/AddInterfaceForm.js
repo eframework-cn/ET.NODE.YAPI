@@ -26,7 +26,6 @@ class AddInterfaceForm extends Component {
     };
   }
 
-
   static propTypes = {
     form: PropTypes.object,
     onSubmit: PropTypes.func,
@@ -34,6 +33,7 @@ class AddInterfaceForm extends Component {
     catid: PropTypes.number,
     catdata: PropTypes.array
   }
+
   handleSubmit = (e) => {
     e.preventDefault();
     this.props.form.validateFields((err, values) => {
@@ -56,6 +56,7 @@ class AddInterfaceForm extends Component {
       path: handleApiPath(val)
     })
   }
+
   render() {
     const { getFieldDecorator, getFieldsError } = this.props.form;
     const formItemLayout = {
@@ -121,10 +122,10 @@ class AddInterfaceForm extends Component {
               {getFieldDecorator('req_id')(
                 <TextInput placeholder="接口枚举"
                   className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
-                  autoComplete='off' trigger={["", " "]} spacer={''}
+                  autoComplete='off' trigger={['']} spacer={''}
                   matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                   options={this.state.curIDOptions} onRequestOptions={part => {
-                    axios.post(`/api/interface/filter_id`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                    axios.post(`/api/interface/filter_id`, { project: this.props.catdata[0].project_id, str: part }).then(data => {
                       this.setState({ curIDOptions: data.data.data })
                     })
                   }} />
@@ -136,10 +137,10 @@ class AddInterfaceForm extends Component {
             >
               {getFieldDecorator('req_pb')(<TextInput placeholder="接口数据"
                 className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
-                autoComplete='off' trigger={["", " "]} spacer={''}
+                autoComplete='off' trigger={['']} spacer={''}
                 matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                 options={this.state.curPBOptions} onRequestOptions={part => {
-                  axios.post(`/api/interface/filter_pb`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                  axios.post(`/api/interface/filter_pb`, { project: this.props.catdata[0].project_id, str: part }).then(data => {
                     this.setState({ curPBOptions: data.data.data })
                   })
                 }} />)}
@@ -152,10 +153,10 @@ class AddInterfaceForm extends Component {
                 {getFieldDecorator('resp_id')(
                   <TextInput placeholder="接口枚举"
                     className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
-                    autoComplete='off' trigger={["", " "]} spacer={''}
+                    autoComplete='off' trigger={['']} spacer={''}
                     matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                     options={this.state.curIDOptions} onRequestOptions={part => {
-                      axios.post(`/api/interface/filter_id`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                      axios.post(`/api/interface/filter_id`, { project: this.props.catdata[0].project_id, str: part }).then(data => {
                         this.setState({ curIDOptions: data.data.data })
                       })
                     }} />
@@ -168,10 +169,10 @@ class AddInterfaceForm extends Component {
             >
               {getFieldDecorator('resp_pb')(<TextInput placeholder="接口数据"
                 className='react-autocomplete' Component={'input'} style={{ width: "305px", height: "33px" }}
-                autoComplete='off' trigger={["", " "]} spacer={''}
+                autoComplete='off' trigger={['']} spacer={''}
                 matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                 options={this.state.curPBOptions} onRequestOptions={part => {
-                  axios.post(`/api/interface/filter_pb`, { project: this.props.catdata[0].project_id, cgi: this.state.curMethod == "CGI", str: part }).then(data => {
+                  axios.post(`/api/interface/filter_pb`, { project: this.props.catdata[0].project_id, str: part }).then(data => {
                     this.setState({ curPBOptions: data.data.data })
                   })
                 }} />)}

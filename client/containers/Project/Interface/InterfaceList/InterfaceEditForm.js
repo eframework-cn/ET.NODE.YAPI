@@ -879,10 +879,10 @@ class InterfaceEditForm extends Component {
                   })(
                     <TextInput placeholder="接口枚举"
                       className='react-autocomplete' Component={'input'} style={{ width: "100%", height: "33px" }}
-                      autoComplete='off' trigger={["", " "]} spacer={''}
+                      autoComplete='off' trigger={['']} spacer={''}
                       matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                       options={this.state.curIDOptions} onRequestOptions={part => {
-                        axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                        axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, str: part }).then(data => {
                           this.setState({ curIDOptions: data.data.data })
                         })
                       }} />
@@ -893,10 +893,10 @@ class InterfaceEditForm extends Component {
                     initialValue: this.state.req_pb,
                   })(<TextInput placeholder="接口数据"
                     className='react-autocomplete' Component={'input'} style={{ width: "100%", height: "33px" }}
-                    autoComplete='off' trigger={["", " "]} spacer={''}
+                    autoComplete='off' trigger={['']} spacer={''}
                     matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                     options={this.state.curPBOptions} onRequestOptions={part => {
-                      axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                      axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, str: part }).then(data => {
                         this.setState({ curPBOptions: data.data.data })
                       })
                     }} />)}
@@ -908,10 +908,10 @@ class InterfaceEditForm extends Component {
                     })(
                       <TextInput placeholder="接口枚举"
                         className='react-autocomplete' Component={'input'} style={{ width: "100%", height: "33px" }}
-                        autoComplete='off' trigger={["", " "]} spacer={''}
+                        autoComplete='off' trigger={['']} spacer={''}
                         matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                         options={this.state.curIDOptions} onRequestOptions={part => {
-                          axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                          axios.post(`/api/interface/filter_id`, { project: this.props.curdata.project_id, str: part }).then(data => {
                             this.setState({ curIDOptions: data.data.data })
                           })
                         }} />
@@ -923,10 +923,10 @@ class InterfaceEditForm extends Component {
                     initialValue: this.state.resp_pb,
                   })(<TextInput placeholder="接口数据"
                     className='react-autocomplete' Component={'input'} style={{ width: "100%", height: "33px" }}
-                    autoComplete='off' trigger={["", " "]} spacer={''}
+                    autoComplete='off' trigger={['']} spacer={''}
                     matchAny={true} maxOptions={0} requestOnlyIfNoOptions={false}
                     options={this.state.curPBOptions} onRequestOptions={part => {
-                      axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, cgi: this.state.method == "CGI", str: part }).then(data => {
+                      axios.post(`/api/interface/filter_pb`, { project: this.props.curdata.project_id, str: part }).then(data => {
                         this.setState({ curPBOptions: data.data.data })
                       })
                     }} />)}

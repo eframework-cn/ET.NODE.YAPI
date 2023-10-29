@@ -91,10 +91,8 @@ class interfaceController extends baseController {
     this.followModel = yapi.getInst(followModel);
     this.userModel = yapi.getInst(userModel);
     this.groupModel = yapi.getInst(groupModel);
-    this.cid = {};
-    this.cpb = {};
-    this.mid = {};
-    this.mpb = {};
+    this.protoIDMap = {};
+    this.protoPBMap = {};
 
     const minLengthStringField = {
       type: 'string',
@@ -496,7 +494,7 @@ class interfaceController extends baseController {
       if (result.method == "CONN" || result.method == "CGI") {
         // req_id
         if (result.req_id) {
-          let req_id_meta = this.getID(result.project_id, result.method == "CGI", result.req_id, true)
+          let req_id_meta = this.getID(result.project_id, result.req_id, true)
           if (req_id_meta.length > 0) {
             result.req_id_comment = req_id_meta[0].comment == "" ? "NONE" : req_id_meta[0].comment
           } else {
@@ -510,7 +508,7 @@ class interfaceController extends baseController {
         // resp_id
         if (result.method == "CONN") {
           if (result.resp_id) {
-            let resp_id_meta = this.getID(result.project_id, result.method == "CGI", result.resp_id, true)
+            let resp_id_meta = this.getID(result.project_id, result.resp_id, true)
             if (resp_id_meta.length > 0) {
               result.resp_id_comment = resp_id_meta[0].comment == "" ? "NONE" : resp_id_meta[0].comment
             } else {
@@ -524,7 +522,7 @@ class interfaceController extends baseController {
         }
         // req_pb
         if (result.req_pb) {
-          let req_pb_meta = this.getPB(result.project_id, result.method == "CGI", result.req_pb, true)
+          let req_pb_meta = this.getPB(result.project_id, result.req_pb, true)
           if (req_pb_meta.length > 0) {
             result.req_pb_struct = req_pb_meta[0].struct == "" ? "NONE" : req_pb_meta[0].struct
           } else {
@@ -535,7 +533,7 @@ class interfaceController extends baseController {
         }
         // resp_pb
         if (result.resp_pb) {
-          let resp_pb_meta = this.getPB(result.project_id, result.method == "CGI", result.resp_pb, true)
+          let resp_pb_meta = this.getPB(result.project_id, result.resp_pb, true)
           if (resp_pb_meta.length > 0) {
             result.resp_pb_struct = resp_pb_meta[0].struct == "" ? "NONE" : resp_pb_meta[0].struct
           } else {
@@ -1346,10 +1344,8 @@ class interfaceController extends baseController {
       root = path.join(root, ctx.params.name);
       fs.writeFileSync(root, ctx.params.file);
       await this.listProto(ctx);
-      if (root.endsWith("cid.h")) this.cid[pid] = null;
-      if (root.endsWith("cpb.proto")) this.cpb[pid] = null;
-      if (root.endsWith("mid.h")) this.mid[pid] = null;
-      if (root.endsWith("mpb.proto")) this.mpb[pid] = null;
+      this.protoIDMap[pid] = null;
+      this.protoPBMap[pid] = null;
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
@@ -1459,6 +1455,8 @@ class interfaceController extends baseController {
             });
           });
         });
+        this.protoIDMap[pid] = null;
+        this.protoPBMap[pid] = null;
         await this.listProto(ctx);
       } else {
         throw new Error("proto_repo wasn't supported by now: " + proto_repo);
@@ -1469,65 +1467,68 @@ class interfaceController extends baseController {
   }
 
   // 获取ID
-  getID(pid, cgi, str, full) {
+  getID(pid, str, full) {
     let rets = [];
     try {
       pid = pid.toString();
       str = str.toLowerCase();
       let root = path.join(path.resolve("./proto"), pid);
-      let hobj = cgi ? this.cid[pid] : this.mid[pid];
-      if (hobj == null) {
-        hobj = {};
-        let hfile = path.join(root, cgi ? "cid.h" : "mid.h");
-        let ctt = fs.readFileSync(hfile, "utf-8");
-        let lines = ctt.split("\n");
-        let beginParse = false;
-        for (let i = 0; i < lines.length; i++) {
-          let line = lines[i].trim();
-          if (line.startsWith("enum")) {
-            beginParse = true;
-            continue;
-          }
-          if (line.startsWith("/") || line == ""
-            || line.startsWith("{") || line.startsWith("}")
-            || line.replace(" ", "").startsWith("*") || line.replace(" ", "").startsWith("/")
-            || beginParse == false) {
-            continue;
-          }
-          let comment = "";
-          let enumName = line.replace("\t", "").replace(" ", "");
-          if (enumName == "") continue;
-          let index1 = enumName.indexOf("/");
-          if (index1 == 0) continue;
-          if (index1 > 0) {
-            comment = enumName.substring(index1, enumName.length);
-            enumName = enumName.substring(0, index1);
-          }
-          enumName = enumName.replace("/", "");
-
-          let index2 = enumName.indexOf("=");
-          if (index2 > 0) {
-            try {
-              enumName = enumName.substring(0, index2);
-            } catch {
-              continue // ref enum value.  
+      let protoIDs = this.protoIDMap[pid];
+      if (protoIDs == null) {
+        protoIDs = {};
+        this.protoIDMap[pid] = protoIDs;
+        rd.eachFileFilterSync(root, /\.h$/, f => {
+          let ctt = fs.readFileSync(f, "utf-8");
+          let lines = ctt.split("\n");
+          let enumObj = null;
+          for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (line.startsWith("enum")) {
+              let enumName = line.replace("enum", "").replace(/ /gm, "").replace(/{/gm, "");
+              enumObj = {};
+              protoIDs[enumName] = enumObj;
+              continue;
             }
+            if (line.startsWith("/") || line == ""
+              || line.startsWith("{") || line.startsWith("}")
+              || line.replace(" ", "").startsWith("*") || line.replace(" ", "").startsWith("/")
+              || enumObj == null) {
+              continue;
+            }
+            let fieldComment = "";
+            let fieldName = line.replace("\t", "").replace(" ", "");
+            if (fieldName == "") continue;
+            let index1 = fieldName.indexOf("/");
+            if (index1 == 0) continue;
+            if (index1 > 0) {
+              fieldComment = fieldName.substring(index1, fieldName.length);
+              fieldName = fieldName.substring(0, index1);
+            }
+            fieldName = fieldName.replace("/", "");
+
+            let index2 = fieldName.indexOf("=");
+            if (index2 > 0) {
+              try {
+                fieldName = fieldName.substring(0, index2);
+              } catch {
+                continue // ref enum value.  
+              }
+            }
+            fieldName = fieldName.replace(",", "").trim();
+            if (fieldComment != "") fieldComment = fieldComment.replace("//", "").trim();
+            enumObj[fieldName] = fieldComment;
           }
-          enumName = enumName.replace(",", "").trim();
-          if (comment != "") comment = comment.replace("//", "").trim();
-          hobj[enumName] = comment;
-        }
-        if (cgi) {
-          this.cid[pid] = hobj;
-        } else {
-          this.mid[pid] = hobj;
-        }
+        })
       }
-      for (let k in hobj) {
-        let v = hobj[k];
-        let t = k.toLocaleLowerCase();
-        if (full ? t == str : (t.indexOf(str) >= 0 || str == "")) {
-          full ? rets.push({ name: k, comment: v }) : rets.push(k);
+      for (let k1 in protoIDs) {
+        let enumObj = protoIDs[k1]
+        for (let k2 in enumObj) {
+          let v = enumObj[k2];
+          let d = k1 + "." + k2
+          let t = d.toLocaleLowerCase();
+          if (full ? t == str : (t.indexOf(str) >= 0 || str == "")) {
+            full ? rets.push({ name: d, comment: v }) : rets.push(d);
+          }
         }
       }
     } catch (err) {
@@ -1537,37 +1538,40 @@ class interfaceController extends baseController {
   }
 
   // 获取PB
-  getPB(pid, cgi, str, full) {
+  getPB(pid, str, full) {
     let rets = [];
     try {
       pid = pid.toString();
       str = str.toLowerCase();
       let root = path.join(path.resolve("./proto"), pid);
-      let pobj = cgi ? this.cpb[pid] : this.mpb[pid];
-      if (pobj == null) {
-        pobj = {};
-        let pfile = path.join(root, cgi ? "cpb.proto" : "mpb.proto");
-        let ctt = fs.readFileSync(pfile, "utf-8");
-        let lines = ctt.split("\n");
-        let mname = "";
-        let nctt = "";
-        for (let i = 0; i < lines.length; i++) {
-          let line = lines[i];
-          let tline = line.trim();
-          if (tline.startsWith("package ") || tline.startsWith("synatx ") || tline == "") {
-            continue;
-          } else if (tline.startsWith("message ")) {
-            mname = tline.split("/")[0].replace("message ", "").replace(/ /g, "").replace(/\t/g, "").replace("{", "").trim();
-            nctt += tline + "\n";
-          } else if (tline.startsWith("}")) {
-            nctt += line + "\n";
-            pobj[mname] = nctt.trim();
-            nctt = "";
-          } else {
-            nctt += line + "\n";
+      let protoPBs = this.protoPBMap[pid];
+      if (protoPBs == null) {
+        protoPBs = {};
+        this.protoPBMap[pid] = protoPBs;
+        rd.eachFileFilterSync(root, /\.proto$/, f => {
+          let ctt = fs.readFileSync(f, "utf-8");
+          let lines = ctt.split("\n");
+          let mname = "";
+          let nctt = "";
+          for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            let tline = line.trim();
+            if (tline.startsWith("package ") || tline.startsWith("synatx ") || tline == "") {
+              continue;
+            } else if (tline.startsWith("message ")) {
+              mname = tline.split("/")[0].replace("message ", "").replace(/ /g, "").replace(/\t/g, "").replace("{", "").trim();
+              nctt += tline + "\n";
+            } else if (tline.startsWith("}")) {
+              nctt += line + "\n";
+              protoPBs[mname] = `// source: ${path.relative(root, f)}\n${nctt.trim()}`;
+              nctt = "";
+            } else {
+              nctt += line + "\n";
+            }
           }
-        }
+        });
       }
+
       function wrap(ctt, visited) {
         let nctt = "";
         let lines = ctt.split("\n");
@@ -1581,17 +1585,18 @@ class interfaceController extends baseController {
             let s0 = ss[0].trim();
             let aa = s0.split(" ");
             let type = aa[1];
-            if (pobj[type] && !visited[type]) {
+            if (protoPBs[type] && !visited[type]) {
               visited[type] = true;
               nctt += "\n\n";
-              nctt += wrap(pobj[type], visited);
+              nctt += wrap(protoPBs[type], visited);
             }
           }
         }
         return ctt + nctt;
       }
-      for (let k in pobj) {
-        let v = pobj[k];
+
+      for (let k in protoPBs) {
+        let v = protoPBs[k];
         let t = k.toLocaleLowerCase();
         if (full ? t == str : (t.indexOf(str) >= 0 || str == "")) {
           let visited = {};
@@ -1607,12 +1612,12 @@ class interfaceController extends baseController {
 
   // 筛选ID
   async filterID(ctx) {
-    ctx.body = yapi.commons.resReturn(this.getID(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full));
+    ctx.body = yapi.commons.resReturn(this.getID(ctx.params.project, ctx.params.str, ctx.params.full));
   }
 
   // 筛选PB
   async filterPB(ctx) {
-    ctx.body = yapi.commons.resReturn(this.getPB(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full));
+    ctx.body = yapi.commons.resReturn(this.getPB(ctx.params.project, ctx.params.str, ctx.params.full));
   }
 }
 

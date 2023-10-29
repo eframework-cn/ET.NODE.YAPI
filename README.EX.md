@@ -14,6 +14,8 @@
   - state和props：state和props主要的区别在于props是不可变的，而state可以根据与用户交互来改变
   - props.match：路由信息
   - @connect：conncet是从react-redux中结构出来的一个装饰器，用来实现不同页面（或组件）的数据共享，避免组件间一层层的嵌套传值
+  - react-autocomplete-input：https://www.npmjs.com/package/react-autocomplete-input
+    - 输入符号'.'时会中断填充
 - 经典MVC结构
   - server/controllers：后端控制
   - server/models：后端数据
