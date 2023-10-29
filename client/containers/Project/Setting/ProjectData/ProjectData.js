@@ -114,7 +114,7 @@ class ProjectData extends Component {
         let protos = []
         for (let i = 0; i < data.data.data.length; i++) {
           let ele = data.data.data[i]
-          protos.push({ checked: false, name: ele })
+          protos.push({ checked: false, name: ele.name, mtime: ele.mtime })
         }
         this.setState({
           protoList: protos,
@@ -200,7 +200,7 @@ class ProjectData extends Component {
           let protos = []
           for (let i = 0; i < data.data.data.length; i++) {
             let ele = data.data.data[i]
-            protos.push({ checked: false, name: ele })
+            protos.push({ checked: false, name: ele.name, mtime: ele.mtime })
           }
           this.setState({
             showUploadingProto: false,
@@ -481,7 +481,7 @@ class ProjectData extends Component {
                                 let protos = []
                                 for (let i = 0; i < data.data.data.length; i++) {
                                   let ele = data.data.data[i]
-                                  protos.push({ checked: false, name: ele })
+                                  protos.push({ checked: false, name: ele.name, mtime: ele.mtime })
                                 }
                                 that.setState({
                                   protoList: protos,
@@ -506,7 +506,7 @@ class ProjectData extends Component {
                           let protos = []
                           for (let i = 0; i < data.data.data.length; i++) {
                             let ele = data.data.data[i]
-                            protos.push({ checked: false, name: ele })
+                            protos.push({ checked: false, name: ele.name, mtime: ele.mtime })
                           }
                           this.setState({
                             protoList: protos,
@@ -526,7 +526,7 @@ class ProjectData extends Component {
                       }
                       this.setState({ protoList: new Array().concat(this.state.protoList) })
                     }} />
-                    <a style={{ "marginLeft": "10px" }}>
+                    <a style={{ "marginLeft": "10px" }} title={`最近更新：${new Date(proto.mtime).toLocaleString()}`}>
                       {proto.name}
                     </a>
                     <br />

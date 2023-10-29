@@ -87,7 +87,8 @@
     "vm2": "^3.8.4",
     "yapi-plugin-qsso": "^1.1.0",
     "node-zip-dir": "1.0.2",
-    "react-autocomplete-input": "1.0.18"
+    "react-autocomplete-input": "1.0.18",
+    "rd": "2.0.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",

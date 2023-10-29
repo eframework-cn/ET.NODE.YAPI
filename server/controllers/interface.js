@@ -19,8 +19,9 @@ const { pathExistsSync } = require('fs-extra');
 const { mkdirSync } = require('fs');
 const nzip = require('node-zip-dir');
 const { mkdirsSync } = require('fs-extra');
-const https = require('https')
+const https = require('https');
 const crypto = require('crypto');
+const rd = require('rd');
 
 // const annotatedCss = require("jsondiffpatch/public/formatters-styles/annotated.css");
 // const htmlCss = require("jsondiffpatch/public/formatters-styles/html.css");
@@ -1337,85 +1338,90 @@ class interfaceController extends baseController {
   // 上传协议
   async pushProto(ctx) {
     try {
-      let pid = ctx.params.project.toString()
-      let root = path.resolve("./proto")
-      if (!pathExistsSync(root)) mkdirSync(root)
-      root = path.join(root, pid)
-      if (!pathExistsSync(root)) mkdirSync(root)
-      root = path.join(root, ctx.params.name)
-      fs.writeFileSync(root, ctx.params.file)
-      await this.listProto(ctx)
-      if (root.endsWith("cid.h")) this.cid[pid] = null
-      if (root.endsWith("cpb.proto")) this.cpb[pid] = null
-      if (root.endsWith("mid.h")) this.mid[pid] = null
-      if (root.endsWith("mpb.proto")) this.mpb[pid] = null
+      let pid = ctx.params.project.toString();
+      let root = path.resolve("./proto");
+      if (!pathExistsSync(root)) mkdirSync(root);
+      root = path.join(root, pid);
+      if (!pathExistsSync(root)) mkdirSync(root);
+      root = path.join(root, ctx.params.name);
+      fs.writeFileSync(root, ctx.params.file);
+      await this.listProto(ctx);
+      if (root.endsWith("cid.h")) this.cid[pid] = null;
+      if (root.endsWith("cpb.proto")) this.cpb[pid] = null;
+      if (root.endsWith("mid.h")) this.mid[pid] = null;
+      if (root.endsWith("mpb.proto")) this.mpb[pid] = null;
     } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+      ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
   }
 
   // 列举协议
   async listProto(ctx) {
     try {
-      let pid = ctx.params.project.toString()
-      let root = path.join(path.resolve("./proto"), pid)
-      let files = fs.readdirSync(root)
-      ctx.body = yapi.commons.resReturn(files)
+      let pid = ctx.params.project.toString();
+      let root = path.join(path.resolve("./proto"), pid);
+      let files = new Array();
+      rd.eachFileFilterSync(root, /(\.h)|(\.proto)$/, f => {
+        files.push({ name: path.relative(root, f), mtime: fs.statSync(f).mtimeMs });
+      })
+      ctx.body = yapi.commons.resReturn(files);
     } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+      ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
   }
 
   // 删除协议
   async delProto(ctx) {
     try {
-      let pid = ctx.params.project.toString()
-      let root = path.join(path.resolve("./proto"), pid)
-      let names = ctx.params.names
+      let pid = ctx.params.project.toString();
+      let root = path.join(path.resolve("./proto"), pid);
+      let names = ctx.params.names;
       for (let i = 0; i < names.length; i++) {
-        let f = path.join(root, names[i])
-        fs.unlinkSync(f)
+        let f = path.join(root, names[i]);
+        fs.unlinkSync(f);
       }
-      this.listProto(ctx)
+      await this.listProto(ctx);
     } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+      ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
   }
 
   // 下载协议
   async pullProto(ctx) {
     try {
-      let pid = ctx.params.project.toString()
-      let root = path.join(path.resolve("./proto"), pid)
-      let names = ctx.params.names
+      let pid = ctx.params.project.toString();
+      let root = path.join(path.resolve("./proto"), pid);
+      let names = ctx.params.names;
       if (names == null || names.length == 0) {
-        throw new Error("zero names.length")
+        throw new Error("zero names.length");
       } else if (names.length == 1) {
-        let file = path.join(root, names[0])
-        file = fs.readFileSync(file)
-        ctx.body = yapi.commons.resReturn({ name: names[0], file: file })
+        let file = path.join(root, names[0]);
+        file = fs.readFileSync(file);
+        ctx.body = yapi.commons.resReturn({ name: names[0], file: file });
       } else {
-        let tmp = path.join(root, "tmp")
-        let zip = tmp + ".zip"
-        mkdirsSync(tmp)
+        let tmp = path.join(root, "..", "tmp_" + Date.now());
+        let zip = tmp + ".zip";
+        mkdirsSync(tmp);
         for (let i = 0; i < names.length; i++) {
-          let f = path.join(root, names[i])
-          let t = path.join(tmp, names[i])
-          fs.writeFileSync(t, fs.readFileSync(f))
+          let f = path.join(root, names[i]);
+          let t = path.join(tmp, names[i]);
+          let d = path.dirname(t);
+          if (!fs.existsSync(d)) mkdirsSync(d);
+          fs.writeFileSync(t, fs.readFileSync(f));
         }
         try {
-          await nzip.zip(tmp, zip)
-          let file = fs.readFileSync(zip)
-          ctx.body = yapi.commons.resReturn({ name: "proto-" + path.basename(root) + ".zip", file: file })
+          await nzip.zip(tmp, zip);
+          let file = fs.readFileSync(zip);
+          ctx.body = yapi.commons.resReturn({ name: "proto-" + path.basename(root) + ".zip", file: file });
         } catch (err) {
           throw err
         } finally {
-          fs.unlinkSync(zip)
-          fs.rmdirSync(tmp, { recursive: true, force: true })
+          fs.unlinkSync(zip);
+          fs.rmdirSync(tmp, { recursive: true, force: true });
         }
       }
     } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+      ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
   }
 
@@ -1425,194 +1431,188 @@ class interfaceController extends baseController {
       let pid = ctx.params.project;
       let pdata = await this.projectModel.get(pid);
       if (pdata == null) throw new Error("no project was found, pid: " + pid);
-      let root = path.resolve("./proto")
-      if (!pathExistsSync(root)) mkdirSync(root)
-      root = path.join(root, pid)
-      if (!pathExistsSync(root)) mkdirSync(root)
+      let root = path.resolve("./proto");
+      if (!pathExistsSync(root)) mkdirSync(root);
+      root = path.join(root, pid);
+      if (!pathExistsSync(root)) mkdirSync(root);
       const { proto_repo, proto_branch, repo_token } = pdata;
       if (proto_repo == null || proto_repo == "") throw new Error("proto_repo is invalid, pid: " + pid);
       if (proto_branch == null || proto_branch == "") throw new Error("proto_branch is invalid, pid: " + pid);
       if (repo_token == null || repo_token == "") throw new Error("repo_token is invalid, pid: " + pid);
-      async function handleArch(afile) {
-        try {
-          await nzip.unzip(afile, root)
-          let files = fs.readdirSync(root)
-          ctx.body = yapi.commons.resReturn(files)
-        } catch (err) {
-          fs.unlinkSync(afile)
-          ctx.body = yapi.commons.resReturn(null, 402, err)
-        }
-      }
       if (proto_repo.indexOf("git.code.tencent.com") >= 0) { // 腾讯工蜂
-        let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F")
+        let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F");
         let aurl = "https://git.code.tencent.com/api/v3/projects/" + ns +
           "/repository/archive?sha=" + proto_branch +
-          "&private_token=" + aseDecode(repo_token)
-        https.get(aurl, (resp) => {
-          let buffers = new Array();
-          resp.on("data", (chunk) => { buffers.push(chunk) })
-          resp.on("error", err => {
-            ctx.body = yapi.commons.resReturn(null, 402, err)
-          })
-          resp.on("end", async () => {
-            let tmp = path.join(root, "tmp_" + Date.now() + ".zip")
-            fs.writeFileSync(tmp, Buffer.concat(buffers))
-            handleArch(tmp)
-          })
+          "&private_token=" + aseDecode(repo_token);
+        await new Promise((resolve, reject) => {
+          https.get(aurl, (resp) => {
+            let datas = new Array();
+            resp.on("data", (data) => { datas.push(data) });
+            resp.on("error", err => reject(err));
+            resp.on("end", async () => {
+              let tmp = path.join(root, "..", "tmp_" + Date.now() + ".zip");
+              fs.writeFileSync(tmp, Buffer.concat(datas));
+              fs.rmdirSync(root, { recursive: true, force: true });
+              await nzip.unzip(tmp, root);
+              fs.unlinkSync(tmp);
+              resolve();
+            });
+          });
         });
+        await this.listProto(ctx);
       } else {
-        throw new Error("proto_repo wasn't supported by now: " + proto_repo)
+        throw new Error("proto_repo wasn't supported by now: " + proto_repo);
       }
     } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+      ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
   }
 
   // 获取ID
   getID(pid, cgi, str, full) {
-    let rets = []
+    let rets = [];
     try {
-      pid = pid.toString()
-      str = str.toLowerCase()
-      let root = path.join(path.resolve("./proto"), pid)
-      let hobj = cgi ? this.cid[pid] : this.mid[pid]
+      pid = pid.toString();
+      str = str.toLowerCase();
+      let root = path.join(path.resolve("./proto"), pid);
+      let hobj = cgi ? this.cid[pid] : this.mid[pid];
       if (hobj == null) {
-        hobj = {}
-        let hfile = path.join(root, cgi ? "cid.h" : "mid.h")
-        let ctt = fs.readFileSync(hfile, "utf-8")
-        let lines = ctt.split("\n")
-        let beginParse = false
+        hobj = {};
+        let hfile = path.join(root, cgi ? "cid.h" : "mid.h");
+        let ctt = fs.readFileSync(hfile, "utf-8");
+        let lines = ctt.split("\n");
+        let beginParse = false;
         for (let i = 0; i < lines.length; i++) {
-          let line = lines[i].trim()
+          let line = lines[i].trim();
           if (line.startsWith("enum")) {
-            beginParse = true
-            continue
+            beginParse = true;
+            continue;
           }
           if (line.startsWith("/") || line == ""
             || line.startsWith("{") || line.startsWith("}")
             || line.replace(" ", "").startsWith("*") || line.replace(" ", "").startsWith("/")
             || beginParse == false) {
-            continue
+            continue;
           }
-          let comment = ""
-          let enumName = line.replace("\t", "").replace(" ", "")
-          if (enumName == "") continue
-          let index1 = enumName.indexOf("/")
-          if (index1 == 0) continue
+          let comment = "";
+          let enumName = line.replace("\t", "").replace(" ", "");
+          if (enumName == "") continue;
+          let index1 = enumName.indexOf("/");
+          if (index1 == 0) continue;
           if (index1 > 0) {
-            comment = enumName.substring(index1, enumName.length)
-            enumName = enumName.substring(0, index1)
+            comment = enumName.substring(index1, enumName.length);
+            enumName = enumName.substring(0, index1);
           }
-          enumName = enumName.replace("/", "")
+          enumName = enumName.replace("/", "");
 
-          let index2 = enumName.indexOf("=")
+          let index2 = enumName.indexOf("=");
           if (index2 > 0) {
             try {
-              enumName = enumName.substring(0, index2)
+              enumName = enumName.substring(0, index2);
             } catch {
               continue // ref enum value.  
             }
           }
-          enumName = enumName.replace(",", "").trim()
-          if (comment != "") comment = comment.replace("//", "").trim()
-          hobj[enumName] = comment
+          enumName = enumName.replace(",", "").trim();
+          if (comment != "") comment = comment.replace("//", "").trim();
+          hobj[enumName] = comment;
         }
         if (cgi) {
-          this.cid[pid] = hobj
+          this.cid[pid] = hobj;
         } else {
-          this.mid[pid] = hobj
+          this.mid[pid] = hobj;
         }
       }
       for (let k in hobj) {
-        let v = hobj[k]
-        let t = k.toLocaleLowerCase()
+        let v = hobj[k];
+        let t = k.toLocaleLowerCase();
         if (full ? t == str : (t.indexOf(str) >= 0 || str == "")) {
-          full ? rets.push({ name: k, comment: v }) : rets.push(k)
+          full ? rets.push({ name: k, comment: v }) : rets.push(k);
         }
       }
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-    return rets
+    return rets;
   }
 
   // 获取PB
   getPB(pid, cgi, str, full) {
-    let rets = []
+    let rets = [];
     try {
-      pid = pid.toString()
-      str = str.toLowerCase()
-      let root = path.join(path.resolve("./proto"), pid)
-      let pobj = cgi ? this.cpb[pid] : this.mpb[pid]
+      pid = pid.toString();
+      str = str.toLowerCase();
+      let root = path.join(path.resolve("./proto"), pid);
+      let pobj = cgi ? this.cpb[pid] : this.mpb[pid];
       if (pobj == null) {
-        pobj = {}
-        let pfile = path.join(root, cgi ? "cpb.proto" : "mpb.proto")
-        let ctt = fs.readFileSync(pfile, "utf-8")
-        let lines = ctt.split("\n")
-        let mname = ""
-        let nctt = ""
+        pobj = {};
+        let pfile = path.join(root, cgi ? "cpb.proto" : "mpb.proto");
+        let ctt = fs.readFileSync(pfile, "utf-8");
+        let lines = ctt.split("\n");
+        let mname = "";
+        let nctt = "";
         for (let i = 0; i < lines.length; i++) {
-          let line = lines[i]
-          let tline = line.trim()
+          let line = lines[i];
+          let tline = line.trim();
           if (tline.startsWith("package ") || tline.startsWith("synatx ") || tline == "") {
-            continue
+            continue;
           } else if (tline.startsWith("message ")) {
-            mname = tline.split("/")[0].replace("message ", "").replace(/ /g, "").replace(/\t/g, "").replace("{", "").trim()
-            nctt += tline + "\n"
+            mname = tline.split("/")[0].replace("message ", "").replace(/ /g, "").replace(/\t/g, "").replace("{", "").trim();
+            nctt += tline + "\n";
           } else if (tline.startsWith("}")) {
-            nctt += line + "\n"
-            pobj[mname] = nctt.trim()
-            nctt = ""
+            nctt += line + "\n";
+            pobj[mname] = nctt.trim();
+            nctt = "";
           } else {
-            nctt += line + "\n"
+            nctt += line + "\n";
           }
         }
       }
       function wrap(ctt, visited) {
-        let nctt = ""
-        let lines = ctt.split("\n")
+        let nctt = "";
+        let lines = ctt.split("\n");
         for (let i = 0; i < lines.length; i++) {
-          let line = lines[i].trim()
+          let line = lines[i].trim();
           if (line.startsWith("required") ||
             line.startsWith("optional") ||
             line.startsWith("repeated")) {
-            line = line.replace(/\t/g, " ").replace(/  /g, " ").replace(/   /g, " ").replace(/    /g, " ").replace(/     /g, " ").replace(/      /g, " ")
-            let ss = line.split("=")
-            let s0 = ss[0].trim()
-            let aa = s0.split(" ")
-            let type = aa[1]
+            line = line.replace(/\t/g, " ").replace(/  /g, " ").replace(/   /g, " ").replace(/    /g, " ").replace(/     /g, " ").replace(/      /g, " ");
+            let ss = line.split("=");
+            let s0 = ss[0].trim();
+            let aa = s0.split(" ");
+            let type = aa[1];
             if (pobj[type] && !visited[type]) {
-              visited[type] = true
-              nctt += "\n\n"
-              nctt += wrap(pobj[type], visited)
+              visited[type] = true;
+              nctt += "\n\n";
+              nctt += wrap(pobj[type], visited);
             }
           }
         }
-        return ctt + nctt
+        return ctt + nctt;
       }
       for (let k in pobj) {
-        let v = pobj[k]
-        let t = k.toLocaleLowerCase()
+        let v = pobj[k];
+        let t = k.toLocaleLowerCase();
         if (full ? t == str : (t.indexOf(str) >= 0 || str == "")) {
-          let visited = {}
-          visited[k] = true
-          full ? rets.push({ name: k, struct: wrap(v, visited) }) : rets.push(k)
+          let visited = {};
+          visited[k] = true;
+          full ? rets.push({ name: k, struct: wrap(v, visited) }) : rets.push(k);
         }
       }
     } catch (err) {
-      console.error(err)
+      console.error(err);
     }
-    return rets
+    return rets;
   }
 
   // 筛选ID
   async filterID(ctx) {
-    ctx.body = yapi.commons.resReturn(this.getID(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full))
+    ctx.body = yapi.commons.resReturn(this.getID(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full));
   }
 
   // 筛选PB
   async filterPB(ctx) {
-    ctx.body = yapi.commons.resReturn(this.getPB(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full))
+    ctx.body = yapi.commons.resReturn(this.getPB(ctx.params.project, ctx.params.cgi, ctx.params.str, ctx.params.full));
   }
 }
 
