@@ -76,9 +76,8 @@ class ProjectCard extends Component {
       content: (
         <div style={{ marginTop: '10px', fontSize: '13px', lineHeight: '25px' }}>
           <Alert
-            message={`该操作将会复制 ${
-              that.props.projectData.name
-            } 下的所有接口集合，但不包括测试集合中的接口`}
+            message={`该操作将会复制 ${that.props.projectData.name
+              } 下的所有接口集合，但不包括测试集合中的接口`}
             type="info"
           />
           <div style={{ marginTop: '16px' }}>
@@ -98,7 +97,7 @@ class ProjectCard extends Component {
         that.copy(projectName);
       },
       iconType: 'copy',
-      onCancel() {}
+      onCancel() { }
     });
   };
 
@@ -131,6 +130,7 @@ class ProjectCard extends Component {
 
   render() {
     const { projectData, inFollowPage, isShow } = this.props;
+    const singleMode = projectData.proto_repo == null || projectData.proto_repo == ""; // 单机模式
     return (
       <div className="card-container">
         <Card
@@ -148,7 +148,9 @@ class ProjectCard extends Component {
                 constants.PROJECT_COLOR[projectData.color] || constants.PROJECT_COLOR.blue
             }}
           />
-          <h4 className="ui-title">{projectData.name || projectData.projectname}</h4>
+          {singleMode ?
+            <h4 className="ui-title">{projectData.name || projectData.projectname}</h4> :
+            <h4 className="ui-title">{`${projectData.name || projectData.projectname} [branch: ${projectData.proto_branch}]`}</h4>}
         </Card>
         <div
           className="card-btns"
