@@ -19,6 +19,8 @@ const { pathExistsSync } = require('fs-extra');
 const { mkdirSync } = require('fs');
 const nzip = require('node-zip-dir');
 const { mkdirsSync } = require('fs-extra');
+const https = require('https')
+const crypto = require('crypto');
 
 // const annotatedCss = require("jsondiffpatch/public/formatters-styles/annotated.css");
 // const htmlCss = require("jsondiffpatch/public/formatters-styles/html.css");
@@ -62,6 +64,20 @@ function handleHeaders(values) {
       });
     }
   }
+}
+
+function aseEncode(data) {
+  const cipher = crypto.createCipher('aes192', "project.secrect");
+  let crypted = cipher.update(data, 'utf-8', 'hex');
+  crypted += cipher.final('hex');
+  return crypted;
+}
+
+function aseDecode(data) {
+  const decipher = crypto.createDecipher('aes192', "project.secrect");
+  let decrypted = decipher.update(data, 'hex', 'utf-8');
+  decrypted += decipher.final('utf-8');
+  return decrypted;
 }
 
 class interfaceController extends baseController {
@@ -1397,6 +1413,55 @@ class interfaceController extends baseController {
           fs.unlinkSync(zip)
           fs.rmdirSync(tmp, { recursive: true, force: true })
         }
+      }
+    } catch (err) {
+      ctx.body = yapi.commons.resReturn(null, 402, err.message)
+    }
+  }
+
+  // 同步协议
+  async updateProto(ctx) {
+    try {
+      let pid = ctx.params.project;
+      let pdata = await this.projectModel.get(pid);
+      if (pdata == null) throw new Error("no project was found, pid: " + pid);
+      let root = path.resolve("./proto")
+      if (!pathExistsSync(root)) mkdirSync(root)
+      root = path.join(root, pid)
+      if (!pathExistsSync(root)) mkdirSync(root)
+      const { proto_repo, proto_branch, repo_token } = pdata;
+      if (proto_repo == null || proto_repo == "") throw new Error("proto_repo is invalid, pid: " + pid);
+      if (proto_branch == null || proto_branch == "") throw new Error("proto_branch is invalid, pid: " + pid);
+      if (repo_token == null || repo_token == "") throw new Error("repo_token is invalid, pid: " + pid);
+      async function handleArch(afile) {
+        try {
+          await nzip.unzip(afile, root)
+          let files = fs.readdirSync(root)
+          ctx.body = yapi.commons.resReturn(files)
+        } catch (err) {
+          fs.unlinkSync(afile)
+          ctx.body = yapi.commons.resReturn(null, 402, err)
+        }
+      }
+      if (proto_repo.indexOf("git.code.tencent.com") >= 0) { // 腾讯工蜂
+        let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F")
+        let aurl = "https://git.code.tencent.com/api/v3/projects/" + ns +
+          "/repository/archive?sha=" + proto_branch +
+          "&private_token=" + aseDecode(repo_token)
+        https.get(aurl, (resp) => {
+          let buffers = new Array();
+          resp.on("data", (chunk) => { buffers.push(chunk) })
+          resp.on("error", err => {
+            ctx.body = yapi.commons.resReturn(null, 402, err)
+          })
+          resp.on("end", async () => {
+            let tmp = path.join(root, "tmp_" + Date.now() + ".zip")
+            fs.writeFileSync(tmp, Buffer.concat(buffers))
+            handleArch(tmp)
+          })
+        });
+      } else {
+        throw new Error("proto_repo wasn't supported by now: " + proto_repo)
       }
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message)

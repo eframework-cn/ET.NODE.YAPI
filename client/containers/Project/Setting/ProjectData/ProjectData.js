@@ -498,47 +498,22 @@ class ProjectData extends Component {
                     }}>删除</Button> :
                   <Button style={{ "marginLeft": "5px", "marginTop": "3px", "marginBottom": "3px", "height": "25px" }}
                     onClick={e => {
-                      let names = []
-                      for (let i = 0; i < this.state.protoList.length; i++) {
-                        let ele = this.state.protoList[i]
-                        if (ele.checked) names.push(ele.name)
-                      }
-                      if (names.length == 0) {
-                        message.error("未选中任何文件")
-                      } else {
-                        let that = this
-                        const ref = confirm({
-                          title: '确定删除文件吗？该操作不可逆！',
-                          width: 600,
-                          okType: 'danger',
-                          iconType: 'exclamation-circle',
-                          className: 'dataImport-confirm',
-                          okText: '确认',
-                          cancelText: '取消',
-                          content: names.toString(),
-                          async onOk() {
-                            axios.post(`/api/interface/del_proto`, { project: that.props.match.params.id, names: names }).then(data => {
-                              if (data.data.errcode != 0) {
-                                message.error(`文件删除失败: ${data.data.errmsg}`);
-                              } else {
-                                message.success(`文件删除成功`);
-                                let protos = []
-                                for (let i = 0; i < data.data.data.length; i++) {
-                                  let ele = data.data.data[i]
-                                  protos.push({ checked: false, name: ele })
-                                }
-                                that.setState({
-                                  protoList: protos,
-                                  checkedAllProto: false,
-                                });
-                              }
-                            })
-                          },
-                          onCancel() {
-                            ref.destroy();
+                      axios.post(`/api/interface/update_proto`, { project: this.props.match.params.id }).then(data => {
+                        if (data.data.errcode != 0) {
+                          message.error(`协议更新失败: ${data.data.errmsg}`);
+                        } else {
+                          message.success(`协议更新成功`);
+                          let protos = []
+                          for (let i = 0; i < data.data.data.length; i++) {
+                            let ele = data.data.data[i]
+                            protos.push({ checked: false, name: ele })
                           }
-                        });
-                      }
+                          this.setState({
+                            protoList: protos,
+                            checkedAllProto: false,
+                          });
+                        }
+                      })
                     }}>更新</Button>}
               </div>
               <div id='protoList' style={{ "marginTop": "5px", overflow: 'scroll', height: singleMode ? '160px' : '345px', "background": "#ffffff", "borderRadius": "2px" }}>

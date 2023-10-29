@@ -409,6 +409,11 @@ let routerConfig = {
       method: 'post'
     },
     {
+      action: 'updateProto',
+      path: 'update_proto',
+      method: 'post'
+    },
+    {
       action: 'filterID',
       path: 'filter_id',
       method: 'post'
