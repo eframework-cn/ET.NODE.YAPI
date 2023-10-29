@@ -9,7 +9,7 @@ import { debounce } from '../../common';
 import constants from '../../constants/variable.js';
 import produce from 'immer';
 import { getProject, checkProjectName, copyProjectMsg } from '../../reducer/modules/project';
-import { trim } from '../../common.js';
+import { trim, pickRandomProperty } from '../../common.js';
 const confirm = Modal.confirm;
 
 @connect(
@@ -59,7 +59,7 @@ class ProjectCard extends Component {
       draftData.preName = draftData.name;
       draftData.name = projectName;
     });
-
+    newData.color = pickRandomProperty(constants.PROJECT_COLOR);
     await this.props.copyProjectMsg(newData);
     message.success('项目复制成功');
     this.props.callbackResult();
