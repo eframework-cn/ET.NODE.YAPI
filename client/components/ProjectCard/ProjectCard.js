@@ -148,9 +148,12 @@ class ProjectCard extends Component {
                 constants.PROJECT_COLOR[projectData.color] || constants.PROJECT_COLOR.blue
             }}
           />
-          {singleMode ?
-            <h4 className="ui-title">{projectData.name || projectData.projectname}</h4> :
-            <h4 className="ui-title">{`${projectData.name || projectData.projectname} [branch: ${projectData.proto_branch}]`}</h4>}
+          <h4 className="ui-title">{projectData.name || projectData.projectname}</h4>
+          {singleMode == false &&
+            <a href={`${projectData.proto_repo.replace(".git", "")}/tree/${projectData.proto_branch}`} target='_blank'>
+              {`[branch: ${projectData.proto_branch}]`}
+            </a>
+          }
         </Card>
         <div
           className="card-btns"
@@ -166,14 +169,16 @@ class ProjectCard extends Component {
             />
           </Tooltip>
         </div>
-        {isShow && (
-          <div className="copy-btns" onClick={this.showConfirm}>
-            <Tooltip placement="rightTop" title="复制项目">
-              <Icon type="copy" className="icon" />
-            </Tooltip>
-          </div>
-        )}
-      </div>
+        {
+          isShow && (
+            <div className="copy-btns" onClick={this.showConfirm}>
+              <Tooltip placement="rightTop" title="复制项目">
+                <Icon type="copy" className="icon" />
+              </Tooltip>
+            </div>
+          )
+        }
+      </div >
     );
   }
 }
