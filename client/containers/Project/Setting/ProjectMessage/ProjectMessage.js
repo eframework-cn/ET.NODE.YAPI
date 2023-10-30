@@ -224,7 +224,7 @@ class ProjectMessage extends Component {
   }
 
   checkRepo = (rule, value, callback) => {
-    const str = value.toString();
+    const str = value ? value.toString() : "";
     const valid = str == "" || (str.startsWith("http") && str.endsWith(".git"))
     if (!valid) {
       callback("协议仓库不合法");
@@ -355,7 +355,7 @@ class ProjectMessage extends Component {
             </FormItem>
 
             <FormItem {...formItemLayout} label="仓库密钥">
-              {getFieldDecorator('repo_token', {})(<Input type="password" autocomplete="new-password" placeholder="personal access token for git repo" />)}
+              {getFieldDecorator('repo_token', {})(<Input type="password" placeholder="personal access token of git repo" />)}
             </FormItem>
 
             <FormItem {...formItemLayout} label="所属分组">

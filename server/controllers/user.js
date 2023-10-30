@@ -10,6 +10,7 @@ const projectModel = require('../models/project.js');
 const avatarModel = require('../models/avatar.js');
 
 const jwt = require('jsonwebtoken');
+const { aesEncode } = require('../utils/token.js');
 
 class userController extends baseController {
   constructor(ctx) {
@@ -357,9 +358,8 @@ class userController extends baseController {
       });
       yapi.commons.sendMail({
         to: user.email,
-        contents: `<h3>亲爱的用户：</h3><p>您好，感谢使用YApi可视化接口平台,您的账号 ${
-          params.email
-        } 已经注册成功</p>`
+        contents: `<h3>亲爱的用户：</h3><p>您好，感谢使用YApi可视化接口平台,您的账号 ${params.email
+          } 已经注册成功</p>`
       });
     } catch (e) {
       ctx.body = yapi.commons.resReturn(null, 401, e.message);
@@ -724,6 +724,30 @@ class userController extends baseController {
       return (ctx.body = yapi.commons.resReturn(result));
     } catch (e) {
       return (ctx.body = yapi.commons.resReturn(result, 422, e.message));
+    }
+  }
+
+  /**
+   * 生成个人密钥
+   * @interface /user/gen_pat
+   * @method POST
+   * @category user
+   * @return {Object}
+   */
+  async genPat(ctx) {
+    let inst = yapi.getInst(userModel);
+    let uid = this.getUid();
+    let pat = uid + '|' + yapi.commons.randStr();
+    pat = aesEncode(pat);
+    let data = {
+      up_time: yapi.commons.time(),
+      pat: aesEncode(pat, this.$user.passsalt) // 用户重置密码后该PAT自动失效
+    };
+    try {
+      await inst.update(uid, data);
+      return (ctx.body = yapi.commons.resReturn(pat));
+    } catch (e) {
+      return (ctx.body = yapi.commons.resReturn(null, 401, e.message));
     }
   }
 }

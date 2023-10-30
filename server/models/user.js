@@ -20,6 +20,7 @@ class userModel extends baseModel {
         required: true
       },
       passsalt: String,
+      pat: String,
       study: { type: Boolean, default: false },
       role: String,
       add_time: Number,

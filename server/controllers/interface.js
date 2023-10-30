@@ -20,8 +20,8 @@ const { mkdirSync } = require('fs');
 const nzip = require('node-zip-dir');
 const { mkdirsSync } = require('fs-extra');
 const https = require('https');
-const crypto = require('crypto');
 const rd = require('rd');
+const { aesDecode } = require('../utils/token.js');
 
 // const annotatedCss = require("jsondiffpatch/public/formatters-styles/annotated.css");
 // const htmlCss = require("jsondiffpatch/public/formatters-styles/html.css");
@@ -65,20 +65,6 @@ function handleHeaders(values) {
       });
     }
   }
-}
-
-function aseEncode(data) {
-  const cipher = crypto.createCipher('aes192', "project.secrect");
-  let crypted = cipher.update(data, 'utf-8', 'hex');
-  crypted += cipher.final('hex');
-  return crypted;
-}
-
-function aseDecode(data) {
-  const decipher = crypto.createDecipher('aes192', "project.secrect");
-  let decrypted = decipher.update(data, 'hex', 'utf-8');
-  decrypted += decipher.final('utf-8');
-  return decrypted;
 }
 
 class interfaceController extends baseController {
@@ -1346,6 +1332,13 @@ class interfaceController extends baseController {
       await this.listProto(ctx);
       this.protoIDMap[pid] = null;
       this.protoPBMap[pid] = null;
+      yapi.commons.saveLog({
+        content: `<a>${this.$user.username}</a> 上传了协议：${ctx.params.name}`,
+        type: 'project',
+        uid: this.$uid,
+        username: this.$user.username,
+        typeid: pid
+      });
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
@@ -1372,11 +1365,21 @@ class interfaceController extends baseController {
       let pid = ctx.params.project.toString();
       let root = path.join(path.resolve("./proto"), pid);
       let names = ctx.params.names;
+      let log = "";
       for (let i = 0; i < names.length; i++) {
         let f = path.join(root, names[i]);
         fs.unlinkSync(f);
+        if (log != "") log += ", ";
+        log += names[i];
       }
       await this.listProto(ctx);
+      yapi.commons.saveLog({
+        content: `<a>${this.$user.username}</a> 删除了协议：${log}`,
+        type: 'project',
+        uid: this.$uid,
+        username: this.$user.username,
+        typeid: pid
+      });
     } catch (err) {
       ctx.body = yapi.commons.resReturn(null, 402, err.message);
     }
@@ -1421,48 +1424,104 @@ class interfaceController extends baseController {
     }
   }
 
-  // 同步协议
+  // 更新协议
   async updateProto(ctx) {
     try {
       let pid = ctx.params.project;
-      let pdata = await this.projectModel.get(pid);
-      if (pdata == null) throw new Error("no project was found, pid: " + pid);
-      let root = path.resolve("./proto");
-      if (!pathExistsSync(root)) mkdirSync(root);
-      root = path.join(root, pid);
-      if (!pathExistsSync(root)) mkdirSync(root);
-      const { proto_repo, proto_branch, repo_token } = pdata;
-      if (proto_repo == null || proto_repo == "") throw new Error("proto_repo is invalid, pid: " + pid);
-      if (proto_branch == null || proto_branch == "") throw new Error("proto_branch is invalid, pid: " + pid);
-      if (repo_token == null || repo_token == "") throw new Error("repo_token is invalid, pid: " + pid);
-      if (proto_repo.indexOf("git.code.tencent.com") >= 0) { // 腾讯工蜂
-        let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F");
-        let aurl = "https://git.code.tencent.com/api/v3/projects/" + ns +
-          "/repository/archive?sha=" + proto_branch +
-          "&private_token=" + aseDecode(repo_token);
-        await new Promise((resolve, reject) => {
-          https.get(aurl, (resp) => {
-            let datas = new Array();
-            resp.on("data", (data) => { datas.push(data) });
-            resp.on("error", err => reject(err));
-            resp.on("end", async () => {
-              let tmp = path.join(root, "..", "tmp_" + Date.now() + ".zip");
+      let proj = await this.projectModel.get(pid);
+      if (proj == null) throw new Error("no project was found, pid: " + pid);
+      await this.fetchProto(proj);
+      await this.listProto(ctx);
+      yapi.commons.saveLog({
+        content: `<a>${this.$user.username}</a> 更新了协议<a href="${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}" target="_blank">[branch: ${proj.proto_branch}]</a>`,
+        type: 'project',
+        uid: this.$uid,
+        username: this.$user.username,
+        typeid: pid
+      });
+    } catch (err) {
+      ctx.body = yapi.commons.resReturn(null, 402, err.message);
+    }
+  }
+
+  // 同步协议
+  async syncProto(ctx) {
+    try {
+      let ret = ""
+      let repo = null;
+      let branch = null;
+      if (ctx.params.object_kind) { // 腾讯工蜂: https://code.tencent.com/help/webhooks#webHooksPush
+        repo = ctx.params.repository.git_http_url;
+        branch = ctx.params.ref;
+        if (branch == null || branch == "") throw new Error("branch is null.")
+        if (repo == null || repo == "") throw new Error("repo is null.")
+        let projs = await this.projectModel.list();
+        for (let i = 0; i < projs.length; i++) {
+          let proj = projs[i]
+          if (proj.proto_repo == repo && branch.endsWith(proj.proto_branch)) {
+            if (ret != "") ret + ", ";
+            ret += proj.id;
+            let pid = proj.id.toString();
+            proj = await this.projectModel.get(proj.id); // 确保repo_token
+            await this.fetchProto(proj)
+            let commit = ctx.params.commits[0];
+            let repoUser = ctx.params.user_name;
+            let commitMsg = commit ? commit.message : "";
+            let commitUrl = commit ? commit.url : "";
+            yapi.commons.saveLog({
+              content: `<a>${repoUser}</a> 同步了协议<a href="${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}" target="_blank">[branch: ${proj.proto_branch}]</a> <a href="${commitUrl}" target="_blank">${commitMsg}</a>`,
+              type: 'project',
+              uid: this.$uid,
+              username: this.$user.username,
+              typeid: pid
+            });
+          }
+        }
+      } else {
+        throw new Error("unsupported hook params.")
+      }
+      ctx.body = yapi.commons.resReturn(`sync proto of project: [${ret}] success.`);
+    } catch (err) {
+      ctx.body = yapi.commons.resReturn(null, 43010, err.message);
+    }
+  }
+
+  async fetchProto(proj) {
+    let pid = proj._id.toString();
+    let root = path.resolve("./proto");
+    if (!pathExistsSync(root)) mkdirSync(root);
+    root = path.join(root, pid);
+    if (!pathExistsSync(root)) mkdirSync(root);
+    const { proto_repo, proto_branch, repo_token } = proj;
+    if (proto_repo == null || proto_repo == "") throw new Error("proto_repo is invalid, pid: " + pid);
+    if (proto_branch == null || proto_branch == "") throw new Error("proto_branch is invalid, pid: " + pid);
+    if (repo_token == null || repo_token == "") throw new Error("repo_token is invalid, pid: " + pid);
+    if (proto_repo.indexOf("git.code.tencent.com") >= 0) { // 腾讯工蜂
+      let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F");
+      let aurl = "https://git.code.tencent.com/api/v3/projects/" + ns +
+        "/repository/archive?sha=" + proto_branch +
+        "&private_token=" + aesDecode(repo_token);
+      await new Promise((resolve, reject) => {
+        https.get(aurl, (resp) => {
+          let datas = new Array();
+          resp.on("data", (data) => { datas.push(data) });
+          resp.on("error", err => reject(err));
+          resp.on("end", async () => {
+            let tmp = path.join(root, "..", "tmp_" + Date.now() + ".zip");
+            try {
               fs.writeFileSync(tmp, Buffer.concat(datas));
               fs.rmdirSync(root, { recursive: true, force: true });
               await nzip.unzip(tmp, root);
-              fs.unlinkSync(tmp);
               resolve();
-            });
+            } catch (err) { reject(new Error(`unzip ${proto_repo.replace(".git", "")}/tree/${proto_branch} error: ${err.message}`)) }
+            finally { fs.unlinkSync(tmp); }
           });
         });
-        this.protoIDMap[pid] = null;
-        this.protoPBMap[pid] = null;
-        await this.listProto(ctx);
-      } else {
-        throw new Error("proto_repo wasn't supported by now: " + proto_repo);
-      }
-    } catch (err) {
-      ctx.body = yapi.commons.resReturn(null, 402, err.message);
+      });
+      this.protoIDMap[pid] = null;
+      this.protoPBMap[pid] = null;
+    } else {
+      throw new Error("proto_repo wasn't supported by now: " + proto_repo);
     }
   }
 

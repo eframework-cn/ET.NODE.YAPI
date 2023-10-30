@@ -60,8 +60,6 @@ let routerConfig = {
       path: 'get_mygroup',
       method: 'get'
     },
-
-
     {
       action: 'list',
       path: 'list',
@@ -187,6 +185,11 @@ let routerConfig = {
     {
       action: 'uploadAvatar',
       path: 'upload_avatar',
+      method: 'post'
+    },
+    {
+      action: 'genPat',
+      path: 'gen_pat',
       method: 'post'
     }
   ],
@@ -411,6 +414,11 @@ let routerConfig = {
     {
       action: 'updateProto',
       path: 'update_proto',
+      method: 'post'
+    },
+    {
+      action: 'syncProto',
+      path: 'sync_proto',
       method: 'post'
     },
     {

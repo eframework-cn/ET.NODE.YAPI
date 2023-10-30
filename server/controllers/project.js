@@ -12,9 +12,8 @@ const userModel = require('../models/user.js');
 const logModel = require('../models/log.js');
 const followModel = require('../models/follow.js');
 const tokenModel = require('../models/token.js');
-const { getToken } = require('../utils/token')
+const { getToken, aesEncode } = require('../utils/token')
 const sha = require('sha.js');
-const crypto = require('crypto');
 const axios = require('axios').default;
 
 class projectController extends baseController {
@@ -163,26 +162,11 @@ class projectController extends baseController {
     return false;
   }
 
-  aseEncode(data) {
-    const cipher = crypto.createCipher('aes192', "project.secrect");
-    let crypted = cipher.update(data, 'utf-8', 'hex');
-    crypted += cipher.final('hex');
-    return crypted;
-  }
-
-  aseDecode(data) {
-    const decipher = crypto.createDecipher('aes192', "project.secrect");
-    let decrypted = decipher.update(data, 'hex', 'utf-8');
-    decrypted += decipher.final('utf-8');
-    return decrypted;
-  }
-
   /**
    * 判断分组名称是否重复
    * @interface /project/check_project_name
    * @method get
    */
-
   async checkProjectName(ctx) {
     try {
       let name = ctx.request.query.name;
@@ -256,7 +240,7 @@ class projectController extends baseController {
       is_json5: false,
       env: [{ name: 'local', domain: 'http://127.0.0.1' }]
     };
-    data.repo_token = this.aseEncode(data.repo_token)
+    data.repo_token = aesEncode(data.repo_token)
     let result = await this.Model.save(data);
     let colInst = yapi.getInst(interfaceColModel);
     let catInst = yapi.getInst(interfaceCatModel);
@@ -859,7 +843,7 @@ class projectController extends baseController {
         let odata = await this.Model.get(id);
         data.repo_token = odata.repo_token
       } else {
-        data.repo_token = this.aseEncode(data.repo_token)
+        data.repo_token = aesEncode(data.repo_token)
       }
       let result = await this.Model.up(id, data);
       let username = this.getUsername();

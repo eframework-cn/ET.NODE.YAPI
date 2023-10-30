@@ -177,14 +177,24 @@ class projectModel extends baseModel {
   }
 
   list(group_id) {
-    let params = { group_id: group_id };
-    return this.model
-      .find(params)
-      .select(
-        '_id uid name basepath proto_repo proto_branch switch_notice desc group_id project_type color icon env add_time up_time'
-      )
-      .sort({ _id: -1 })
-      .exec();
+    if (group_id) {
+      let params = { group_id: group_id };
+      return this.model
+        .find(params)
+        .select(
+          '_id uid name basepath proto_repo proto_branch switch_notice desc group_id project_type color icon env add_time up_time'
+        )
+        .sort({ _id: -1 })
+        .exec();
+    } else {
+      return this.model
+        .find()
+        .select(
+          '_id uid name basepath proto_repo proto_branch switch_notice desc group_id project_type color icon env add_time up_time'
+        )
+        .sort({ _id: -1 })
+        .exec();
+    }
   }
 
   // 获取项目数量统计

@@ -104,7 +104,7 @@ class ProjectList extends Component {
   }
 
   checkRepo = (rule, value, callback) => {
-    const str = value.toString();
+    const str = value ? value.toString() : "";
     const valid = str == "" || (str.startsWith("http") && str.endsWith(".git"))
     if (!valid) {
       callback("协议仓库不合法");
@@ -128,7 +128,6 @@ class ProjectList extends Component {
             <FormItem {...formItemLayout} label="协议仓库">
               {getFieldDecorator('proto_repo', {
                 rules: [
-                  { required: false },
                   { validator: this.checkRepo }
                 ]
               })(<Input placeholder="https://$hostname/$namespace/$repo.git" />)}
@@ -139,7 +138,7 @@ class ProjectList extends Component {
             </FormItem>
 
             <FormItem {...formItemLayout} label="仓库密钥">
-              {getFieldDecorator('repo_token', {})(<Input type="password" autocomplete="new-password" placeholder="personal access token for git repo" />)}
+              {getFieldDecorator('repo_token', {})(<Input type="password" placeholder="personal access token of git repo" />)}
             </FormItem>
 
             <FormItem {...formItemLayout} label="所属分组">

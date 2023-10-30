@@ -75,7 +75,7 @@ class ProjectData extends Component {
       curImportType: 'swagger',
       curExportType: null,
       showLoading: false,
-      dataSync: 'merge',
+      dataSync: 'good',
       exportContent: 'all',
       isSwaggerUrl: false,
       swaggerUrl: '',
@@ -240,7 +240,7 @@ class ProjectData extends Component {
     });
     let domainData = result.payload.data.data;
     const ref = confirm({
-      title: '您确认要进行数据同步????',
+      title: '您确认要进行数据同步？',
       width: 600,
       okType: 'danger',
       iconType: 'exclamation-circle',
@@ -464,7 +464,7 @@ class ProjectData extends Component {
                       } else {
                         let that = this
                         const ref = confirm({
-                          title: '确定删除文件吗？该操作不可逆！',
+                          title: '确定删除文件吗？',
                           width: 600,
                           okType: 'danger',
                           iconType: 'exclamation-circle',

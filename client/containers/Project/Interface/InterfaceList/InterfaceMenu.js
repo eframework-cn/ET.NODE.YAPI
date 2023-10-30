@@ -206,7 +206,7 @@ class InterfaceMenu extends Component {
     let id = data._id;
     let catid = data.catid;
     const ref = confirm({
-      title: '您确认删除此接口????',
+      title: '您确认删除此接口？',
       content: '温馨提示：接口删除后，无法恢复',
       okText: '确认',
       cancelText: '取消',
@@ -240,7 +240,7 @@ class InterfaceMenu extends Component {
         that.props.history.push('/project/' + that.props.match.params.id + '/interface/api');
         ref.destroy();
       },
-      onCancel() {}
+      onCancel() { }
     });
   };
 

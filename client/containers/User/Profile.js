@@ -1,10 +1,12 @@
 import React, { PureComponent as Component } from 'react';
-import { Row, Col, Input, Button, Select, message, Upload, Tooltip } from 'antd';
+import { Row, Col, Input, Button, Select, message, Upload, Tooltip, Modal } from 'antd';
 import axios from 'axios';
 import { formatTime } from '../../common.js';
 import PropTypes from 'prop-types';
 import { setBreadcrumb, setImageUrl } from '../../reducer/modules/user';
 import { connect } from 'react-redux';
+import copy from 'copy-to-clipboard';
+const confirm = Modal.confirm;
 
 const EditButton = props => {
   const { isAdmin, isOwner, onClick, name, admin } = props;
@@ -76,6 +78,7 @@ class Profile extends Component {
       emailEdit: false,
       secureEdit: false,
       roleEdit: false,
+      patValue: false,
       userinfo: {}
     };
   }
@@ -381,6 +384,7 @@ class Profile extends Component {
         </div>
       );
     }
+
     return (
       <div className="user-profile">
         <div className="user-item-body">
@@ -456,6 +460,63 @@ class Profile extends Component {
           ) : (
             ''
           )}
+
+          {userinfo.role == "admin" &&
+            <Row className="user-item" type="flex" justify="start">
+              <div className="maoboli" />
+              <Col span={4}>密钥</Col>
+              {this.state.patValue ?
+                <Col span={12} title='刷新后不可见，请注意保存密钥'>{this.state.patValue}
+                  <Button
+                    icon="copy"
+                    style={{ marginLeft: "10px", color: "red" }}
+                    onClick={() => {
+                      copy(this.state.patValue);
+                      message.success('已经成功复制到剪切板');
+                      this.setState({
+                        patValue: null
+                      });
+                    }}
+                  />
+                </Col> :
+                <Col span={12}>
+                  <Button
+                    icon="edit"
+                    onClick={() => {
+                      let that = this
+                      const ref = confirm({
+                        title: '确定生成密钥吗？',
+                        width: 600,
+                        okType: 'danger',
+                        iconType: 'exclamation-circle',
+                        className: 'dataImport-confirm',
+                        okText: '确认',
+                        cancelText: '取消',
+                        content: '该操作会撤销旧密钥授权，请确认是否生成！',
+                        async onOk() {
+                          axios.post(`/api/user/gen_pat`).then(data => {
+                            if (data.data.errcode != 0) {
+                              message.error(`密钥生成失败: ${data.data.errmsg}`);
+                            } else {
+                              message.success(`密钥生成成功`);
+                              that.setState({
+                                patValue: data.data.data
+                              });
+                            }
+                          })
+                        },
+                        onCancel() {
+                          ref.destroy();
+                        }
+                      });
+                    }}
+                  >
+                    生成
+                  </Button>
+                </Col>
+              }
+            </Row>
+          }
         </div>
       </div>
     );
