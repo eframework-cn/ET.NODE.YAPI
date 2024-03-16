@@ -1,6 +1,8 @@
 process.env.NODE_PATH = __dirname;
 require('module').Module._initPaths();
 
+require('./install.js');
+
 const yapi = require('./yapi.js');
 const commons = require('./utils/commons');
 yapi.commons = commons;
