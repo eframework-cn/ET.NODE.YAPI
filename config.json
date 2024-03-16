@@ -1,6 +1,6 @@
 {
   "port": "3000",
-  "adminAccount": "admin",
+  "adminAccount": "admin@eframework.cn",
   "timeout": 120000,
   "db": {
     "servername": "mongo",
