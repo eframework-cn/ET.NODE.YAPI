@@ -10,14 +10,11 @@ RUN yarn install --registry https://registry.npmmirror.com && \
     npm run build-client && \
     npm prune --production
 
-# RUN /usr/local/bin/node-prune
-
 # runtime phase
 FROM node:12-alpine
 
-WORKDIR /dist
-
-COPY --from=BUILD_IMAGE /build .
+WORKDIR /var/yapi
+COPY --from=BUILD_IMAGE /build /var/yapi
 
 EXPOSE 3000
 ENV TZ="Asia/Shanghai"

@@ -18,7 +18,7 @@ const MEMBER_STATUS = 2;
 // Reducer user
 const initialState = {
   isLogin: false,
-  canRegister: true,
+  canRegister: false,
   isLDAP: false,
   userName: null,
   uid: null,

@@ -38,7 +38,7 @@
 - server/controllers/interface.js：新增前端相关接口，如：pushProto、listProto、delProto、pullProto、getID等
 - server/models/interface.js：新增req_id、req_pb、resp_id、resp_pb等字段
 - server/app.js：修改文件上传大小限制为10mb：app.use(koaBody({ strict: false, multipart: true, jsonLimit: '10mb', formLimit: '10mb', textLimit: '10mb' }));
-- server/install.js：修改初始化密码，移除install-server，合并至启动阶段
+- server/install.js：修改初始化密码，移除install-server和init.lock，合并至启动阶段
 - server/yapi.js：修改配置文件及前端资源路径
 
 ## DIFF
@@ -53,3 +53,7 @@
 ## FAQ
 - 是否有同步源项目的必要？
   - 可不必同步，源项目已经停更，维护本分支更为合理
+
+## TODO
+- Docker镜像发布需要自动化（Action）
+- 需支持管理员创建用户/接口创建用户

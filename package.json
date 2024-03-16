@@ -1,7 +1,7 @@
 {
-  "name": "yapi-vendor",
-  "version": "1.10.2",
-  "description": "YAPI",
+  "name": "yapi",
+  "version": "1.0.0",
+  "description": "API develop and test platform.",
   "main": "server/app.js",
   "scripts": {
     "dev-copy-icon": "cp -r static/iconfont ./",
@@ -24,7 +24,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:YMFE/yapi.git"
+    "url": "git@github.com:eframework-cn/EP.NODE.YAPI.git"
   },
   "author": "",
   "license": "Apache-2.0",
