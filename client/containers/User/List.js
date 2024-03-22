@@ -273,34 +273,32 @@ class List extends Component {
     };
 
     return (
-      <div>
-        <section className="user-table">
-          <div className="user-search-wrapper">
-            <h2 style={{ marginBottom: '10px' }}>用户总数：{this.state.total}位</h2>
+      <section className="user-table">
+        <div className="user-search-wrapper">
+          <h2 style={{ marginBottom: '10px' }}>用户总数：{this.state.total}位</h2>
 
-            {role == "admin" &&
-              <Button
-                type="primary"
-                style={{ position: "absolute", "right": "270px", top: 0 }}
-                onClick={this.showAddUserModal}>
-                添加用户
-              </Button>
-            }
+          {role == "admin" &&
+            <Button
+              type="primary"
+              style={{ position: "absolute", "right": "270px", top: 0 }}
+              onClick={this.showAddUserModal}>
+              添加用户
+            </Button>
+          }
 
-            <Search
-              onChange={e => this.handleSearch(e.target.value)}
-              onSearch={this.handleSearch}
-              placeholder="请输入用户名"
-            />
-          </div>
-          <Table
-            bordered={true}
-            rowKey={record => record._id}
-            columns={columns}
-            pagination={this.state.isSearch ? defaultPageConfig : pageConfig}
-            dataSource={data}
+          <Search
+            onChange={e => this.handleSearch(e.target.value)}
+            onSearch={this.handleSearch}
+            placeholder="请输入用户名"
           />
-        </section>
+        </div>
+        <Table
+          bordered={true}
+          rowKey={record => record._id}
+          columns={columns}
+          pagination={this.state.isSearch ? defaultPageConfig : pageConfig}
+          dataSource={data}
+        />
         {this.state.addUserModalVisible && (
           <Modal
             title="添加用户"
@@ -343,7 +341,7 @@ class List extends Component {
             </Row>
           </Modal>
         )}
-      </div>
+      </section>
     );
   }
 }
