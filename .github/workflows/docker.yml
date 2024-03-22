@@ -23,7 +23,7 @@ jobs:
       ## 构建镜像
       - run: docker build . -t eframework/yapi:latest
 
-      ## 登录账号
+      ## 登录镜像
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.EF_DOCKER_USER }}
