@@ -118,6 +118,11 @@ let routerConfig = {
       method: 'post'
     },
     {
+      action: 'add',
+      path: 'add',
+      method: 'post'
+    },
+    {
       action: 'list',
       path: 'list',
       method: 'get'

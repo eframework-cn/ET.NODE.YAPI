@@ -2,11 +2,11 @@ import React, { PureComponent as Component } from 'react';
 import { formatTime } from '../../common.js';
 import { Link } from 'react-router-dom';
 import { setBreadcrumb } from '../../reducer/modules/user';
-//import PropTypes from 'prop-types'
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Table, Popconfirm, message, Input } from 'antd';
+import { Table, Row, Col, Popconfirm, message, Input, Modal, Button } from 'antd';
 import axios from 'axios';
+import { autobind } from 'core-decorators';
 
 const Search = Input.Search;
 const limit = 20;
@@ -28,7 +28,12 @@ class List extends Component {
       total: null,
       current: 1,
       backups: [],
-      isSearch: false
+      isSearch: false,
+      addUserModalVisible: false,
+      newUserName: '',
+      newUserEMail: '',
+      newUserPassword: '',
+      newUserPassword2: '',
     };
   }
   static propTypes = {
@@ -127,6 +132,67 @@ class List extends Component {
     }
   };
 
+  @autobind
+  showAddUserModal() {
+    this.setState({
+      addUserModalVisible: true
+    });
+  }
+
+  @autobind
+  hideAddUserModal() {
+    this.setState({
+      newGroupName: '',
+      group_name: '',
+      addUserModalVisible: false,
+      newUserName: '',
+      newUserEMail: '',
+      newUserPassword: '',
+      newUserPassword2: '',
+    });
+  }
+
+  @autobind
+  inputUserName(e) { this.setState({ newUserName: e.target.value }); }
+
+  @autobind
+  inputUserEMail(e) { this.setState({ newUserEMail: e.target.value }); }
+
+  @autobind
+  inputUserPassword(e) { this.setState({ newUserPassword: e.target.value }); }
+
+  @autobind
+  inputUserPassword2(e) { this.setState({ newUserPassword2: e.target.value }); }
+
+  @autobind
+  async addUser() {
+    const { newUserName, newUserEMail, newUserPassword, newUserPassword2 } = this.state;
+    if (newUserName == null || newUserName == "") {
+      message.error("用户名称不可为空")
+      return;
+    }
+    if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{1,})+$/.test(newUserEMail) == false) {
+      message.error("用户邮箱格式错误")
+      return;
+    }
+    if (newUserPassword == null || newUserPassword == "") {
+      message.error("用户密码不可为空")
+      return;
+    }
+    if (newUserPassword != newUserPassword2) {
+      message.error("两次输入的密码不一致")
+      return;
+    }
+    const res = await axios.post('/api/user/add', { username: newUserName, email: newUserEMail, password: newUserPassword });
+    if (!res.data.errcode) {
+      this.hideAddUserModal();
+      this.getUserList();
+      message.success(`用户：${newUserName} 添加成功`);
+    } else {
+      message.error(res.data.errmsg);
+    }
+  }
+
   render() {
     const role = this.props.curUserRole;
     let data = [];
@@ -207,23 +273,77 @@ class List extends Component {
     };
 
     return (
-      <section className="user-table">
-        <div className="user-search-wrapper">
-          <h2 style={{ marginBottom: '10px' }}>用户总数：{this.state.total}位</h2>
-          <Search
-            onChange={e => this.handleSearch(e.target.value)}
-            onSearch={this.handleSearch}
-            placeholder="请输入用户名"
+      <div>
+        <section className="user-table">
+          <div className="user-search-wrapper">
+            <h2 style={{ marginBottom: '10px' }}>用户总数：{this.state.total}位</h2>
+
+            {role == "admin" &&
+              <Button
+                type="primary"
+                style={{ position: "absolute", "right": "270px", top: 0 }}
+                onClick={this.showAddUserModal}>
+                添加用户
+              </Button>
+            }
+
+            <Search
+              onChange={e => this.handleSearch(e.target.value)}
+              onSearch={this.handleSearch}
+              placeholder="请输入用户名"
+            />
+          </div>
+          <Table
+            bordered={true}
+            rowKey={record => record._id}
+            columns={columns}
+            pagination={this.state.isSearch ? defaultPageConfig : pageConfig}
+            dataSource={data}
           />
-        </div>
-        <Table
-          bordered={true}
-          rowKey={record => record._id}
-          columns={columns}
-          pagination={this.state.isSearch ? defaultPageConfig : pageConfig}
-          dataSource={data}
-        />
-      </section>
+        </section>
+        {this.state.addUserModalVisible && (
+          <Modal
+            title="添加用户"
+            visible={this.state.addUserModalVisible}
+            onOk={this.addUser}
+            onCancel={this.hideAddUserModal}
+            className="add-user-modal"
+          >
+            <Row gutter={6} className="modal-input">
+              <Col span="5">
+                <div className="label">用户名称：</div>
+              </Col>
+              <Col span="15">
+                <Input placeholder="请输入用户名称" onChange={this.inputUserName} />
+              </Col>
+            </Row>
+            <Row gutter={6} className="modal-input">
+              <Col span="5">
+                <div className="label">用户邮箱：</div>
+              </Col>
+              <Col span="15">
+                <Input placeholder="请输入用户邮箱" onChange={this.inputUserEMail} />
+              </Col>
+            </Row>
+            <Row gutter={6} className="modal-input">
+              <Col span="5">
+                <div className="label">用户密码：</div>
+              </Col>
+              <Col span="15">
+                <Input placeholder="请输入用户密码" onChange={this.inputUserPassword} />
+              </Col>
+            </Row>
+            <Row gutter={6} className="modal-input">
+              <Col span="5">
+                <div className="label">确认密码：</div>
+              </Col>
+              <Col span="15">
+                <Input placeholder="请确认用户密码" onChange={this.inputUserPassword2} />
+              </Col>
+            </Row>
+          </Modal>
+        )}
+      </div>
     );
   }
 }

@@ -58,8 +58,10 @@ class baseController {
 
     let params = Object.assign({}, ctx.query, ctx.request.body);
     let token = params.token;
-    if (!token) token = ctx.request.header["x-token"]
-    if (!token) token = ctx.request.header["X-Token"]
+    if (!token) token = ctx.request.header["authorization"] // gitea, https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
+    if (!token) token = ctx.request.header["Authorization"] // gitea, https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
+    if (!token) token = ctx.request.header["x-token"] // gitcode
+    if (!token) token = ctx.request.header["X-Token"] // gitcode
 
     // 如果前缀是 /api/open，执行 parse token 逻辑
     if (token && typeof token === 'string' && (openApiRouter.indexOf(ctx.path) > -1 || ctx.path.indexOf('/api/open/') === 0)) {

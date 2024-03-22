@@ -12,7 +12,6 @@ const jobMap = new Map();
 class syncUtils {
 
     constructor(ctx) {
-        yapi.commons.log("-------------------------------------swaggerSyncUtils constructor-----------------------------------------------");
         this.ctx = ctx;
         this.openController = yapi.getInst(openController);
         this.syncModel = yapi.getInst(syncModel);
@@ -41,7 +40,7 @@ class syncUtils {
      * @param {*} uid 用户id
      */
     async addSyncJob(projectId, cronExpression, swaggerUrl, syncMode, uid) {
-        if(!swaggerUrl)return;
+        if (!swaggerUrl) return;
         let projectToken = await this.getProjectToken(projectId, uid);
         //立即执行一次
         this.syncInterface(projectId, swaggerUrl, syncMode, uid, projectToken);
@@ -63,7 +62,7 @@ class syncUtils {
         let oldPorjectData;
         try {
             oldPorjectData = await this.projectModel.get(projectId);
-        } catch(e) {
+        } catch (e) {
             yapi.commons.log('获取项目:' + projectId + '失败');
             this.deleteSyncJob(projectId);
             //删除数据库定时任务
@@ -211,7 +210,7 @@ class syncUtils {
             }
             return response.data;
         } catch (e) {
-            let response = e.response || {status: e.message || 'error'};
+            let response = e.response || { status: e.message || 'error' };
             throw new Error(`http status "${response.status}"` + '获取数据失败，请确认 swaggerUrl 是否正确')
         }
     }

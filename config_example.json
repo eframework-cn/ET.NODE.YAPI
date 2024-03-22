@@ -2,6 +2,7 @@
   "port": "3000",
   "adminAccount": "admin@eframework.cn",
   "timeout": 120000,
+  "closeRegister": true,
   "db": {
     "servername": "mongo",
     "DATABASE": "yapi",

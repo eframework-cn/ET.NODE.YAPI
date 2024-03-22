@@ -20,6 +20,7 @@ const { mkdirSync } = require('fs');
 const nzip = require('node-zip-dir');
 const { mkdirsSync } = require('fs-extra');
 const https = require('https');
+const http = require('http');
 const rd = require('rd');
 const { aesDecode } = require('../utils/token.js');
 
@@ -1447,38 +1448,51 @@ class interfaceController extends baseController {
   // 同步协议
   async syncProto(ctx) {
     try {
-      let ret = ""
+      let ret = "";
+      let kind = null;
       let repo = null;
       let branch = null;
+      let repoUser = null;
+      let commitMsg = null;
+      let commitUrl = null;
       if (ctx.params.object_kind) { // 腾讯工蜂: https://code.tencent.com/help/webhooks#webHooksPush
+        kind = "gitcode";
         repo = ctx.params.repository.git_http_url;
         branch = ctx.params.ref;
-        if (branch == null || branch == "") throw new Error("branch is null.")
-        if (repo == null || repo == "") throw new Error("repo is null.")
-        let projs = await this.projectModel.list();
-        for (let i = 0; i < projs.length; i++) {
-          let proj = projs[i]
-          if (proj.proto_repo == repo && branch.endsWith(proj.proto_branch)) {
-            if (ret != "") ret + ", ";
-            ret += proj.id;
-            let pid = proj.id.toString();
-            proj = await this.projectModel.get(proj.id); // 确保repo_token
-            await this.fetchProto(proj)
-            let commit = ctx.params.commits[0];
-            let repoUser = ctx.params.user_name;
-            let commitMsg = commit ? commit.message : "";
-            let commitUrl = commit ? commit.url : "";
-            yapi.commons.saveLog({
-              content: `<a>${repoUser}</a> 同步了协议<a href="${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}" target="_blank">[branch: ${proj.proto_branch}]</a> <a href="${commitUrl}" target="_blank">${commitMsg}</a>`,
-              type: 'project',
-              uid: this.$uid,
-              username: this.$user.username,
-              typeid: pid
-            });
-          }
-        }
+        let commit = ctx.params.commits[0];
+        repoUser = ctx.params.user_name;
+        commitMsg = commit ? commit.message : "";
+        commitUrl = commit ? commit.url : "";
+      } else if (ctx.request.header["x-gitea-event"] || ctx.request.header["X-Gitea-Event"]) { // Gitea：https://docs.gitea.com/zh-cn/usage/webhooks
+        kind = "gitea";
+        repo = ctx.params.repository.clone_url;
+        branch = ctx.params.ref;
+        let commit = ctx.params.commits[0];
+        repoUser = commit ? commit.author.name : "NONE";
+        commitMsg = commit ? commit.message : "";
+        commitUrl = commit ? commit.url : "";
       } else {
         throw new Error("unsupported hook params.")
+      }
+      if (branch == null || branch == "") throw new Error("branch is null.")
+      if (repo == null || repo == "") throw new Error("repo is null.")
+      let projs = await this.projectModel.list();
+      for (let i = 0; i < projs.length; i++) {
+        let proj = projs[i]
+        if (proj.proto_repo == repo && branch.endsWith(proj.proto_branch)) {
+          if (ret != "") ret + ", ";
+          ret += proj.id;
+          let pid = proj.id.toString();
+          proj = await this.projectModel.get(proj.id); // 确保repo_token
+          await this.fetchProto(proj, kind)
+          yapi.commons.saveLog({
+            content: `<a>${repoUser}</a> 同步了协议<a href="${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}" target="_blank">[branch: ${proj.proto_branch}]</a> <a href="${commitUrl}" target="_blank">${commitMsg.trim()}</a>`,
+            type: 'project',
+            uid: this.$uid,
+            username: this.$user.username,
+            typeid: pid
+          });
+        }
       }
       ctx.body = yapi.commons.resReturn(`sync proto of project: [${ret}] success.`);
     } catch (err) {
@@ -1486,7 +1500,7 @@ class interfaceController extends baseController {
     }
   }
 
-  async fetchProto(proj) {
+  async fetchProto(proj, kind) {
     let pid = proj._id.toString();
     let root = path.resolve("./proto");
     if (!pathExistsSync(root)) mkdirSync(root);
@@ -1496,7 +1510,25 @@ class interfaceController extends baseController {
     if (proto_repo == null || proto_repo == "") throw new Error("proto_repo is invalid, pid: " + pid);
     if (proto_branch == null || proto_branch == "") throw new Error("proto_branch is invalid, pid: " + pid);
     if (repo_token == null || repo_token == "") throw new Error("repo_token is invalid, pid: " + pid);
-    if (proto_repo.indexOf("git.code.tencent.com") >= 0) { // 腾讯工蜂
+    if (kind == null) {
+      if (proto_repo.indexOf("git.code.tencent") >= 0) kind = "gitcode"
+      else {
+        await new Promise((resolve, reject) => {
+          let opts = { headers: { "Accept": "text/html" } };
+          let service = proto_repo.startsWith("https") ? https : http;
+          service.get(proto_repo, opts, (resp) => {
+            let data = "";
+            resp.on("data", (chunk) => data += chunk);
+            resp.on("error", err => reject(err));
+            resp.on("end", async () => {
+              if (data.indexOf("gitea") >= 0) kind = "gitea"
+              resolve()
+            });
+          });
+        });
+      }
+    }
+    if (kind == "gitcode") {
       let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F");
       let aurl = "https://git.code.tencent.com/api/v3/projects/" + ns +
         "/repository/archive?sha=" + proto_branch +
@@ -1515,6 +1547,38 @@ class interfaceController extends baseController {
               resolve();
             } catch (err) { reject(new Error(`unzip ${proto_repo.replace(".git", "")}/tree/${proto_branch} error: ${err.message}`)) }
             finally { fs.unlinkSync(tmp); }
+          });
+        });
+      });
+      this.protoIDMap[pid] = null;
+      this.protoPBMap[pid] = null;
+    } else if (kind == "gitea") {
+      let strs = proto_repo.split("/")
+      let domain = strs[0] + "//" + strs[2]
+      let ns = strs[3]
+      let name = strs[4].replace(".git", "")
+      let aurl = domain + "/api/v1/repos/" + ns + "/" + name + "/archive/" + proto_branch + ".zip" + "?access_token=" + aesDecode(repo_token);
+      await new Promise((resolve, reject) => {
+        let service = aurl.startsWith("https") ? https : http;
+        service.get(aurl, (resp) => {
+          let datas = new Array();
+          resp.on("data", (data) => { datas.push(data) });
+          resp.on("error", err => reject(err));
+          resp.on("end", async () => {
+            let tmpRoot = path.join(root, "..", "tmp_" + Date.now());
+            if (!pathExistsSync(tmpRoot)) mkdirSync(tmpRoot);
+            let tmp = path.join(tmpRoot, "tmp_" + Date.now() + ".zip");
+            try {
+              fs.writeFileSync(tmp, Buffer.concat(datas));
+              fs.rmdirSync(root, { recursive: true, force: true });
+              await nzip.unzip(tmp, tmpRoot);
+              let tmpProto = path.join(tmpRoot, name.toLowerCase());
+              fs.moveSync(tmpProto, root);
+              resolve();
+            } catch (err) { reject(new Error(`unzip ${proto_repo.replace(".git", "")}/tree/${proto_branch} error: ${err.message}`)) }
+            finally {
+              fs.rmdirSync(tmpRoot, { recursive: true, force: true });
+            }
           });
         });
       });

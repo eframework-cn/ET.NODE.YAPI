@@ -65,7 +65,7 @@ installDB().then(() => {
   server.setTimeout(yapi.WEBCONFIG.timeout);
 
   commons.log(
-    `服务已启动，请打开下面链接访问: \nhttp://127.0.0.1${yapi.WEBCONFIG.port == '80' ? '' : ':' + yapi.WEBCONFIG.port
+    `服务已启动，请打开链接访问: http://127.0.0.1${yapi.WEBCONFIG.port == '80' ? '' : ':' + yapi.WEBCONFIG.port
     }/`
   );
 })
