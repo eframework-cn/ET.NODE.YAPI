@@ -1,8 +1,8 @@
 name: Build Docker
 on:
   push:
-    paths:
-      - ".github/workflows/docker.yml"
+    tags:
+      - "*"
 
 jobs:
   build:
