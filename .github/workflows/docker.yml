@@ -18,8 +18,14 @@ jobs:
       ## 检出工程
       - uses: actions/checkout@v3
 
+      ## 获取版本
+      - run: |
+          VERSION=$(node -p "require('./package.json').version")  
+          echo "Package version is $VERSION"  
+          echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+
       ## 构建镜像
-      - run: docker build . -t eframework/yapi:latest
+      - run: docker build . -t eframework/yapi:${PACKAGE_VERSION}
 
       ## 登录镜像
       - uses: docker/login-action@v3
@@ -28,4 +34,5 @@ jobs:
           password: ${{ secrets.EF_DOCKER_TOKEN }}
 
       ## 发布镜像
+      - run: docker push eframework/yapi:${PACKAGE_VERSION}
       - run: docker push eframework/yapi:latest
