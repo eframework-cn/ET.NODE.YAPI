@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - ".github/workflows/docker.yml"
+    tags:
+      - v*
 
 jobs:
   build:
@@ -25,7 +27,7 @@ jobs:
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.EF_DOCKER_USER }}
-          password: ${{ secrets.EF_DOCKER_SECRECT }}
+          password: ${{ secrets.EF_DOCKER_TOKEN }}
 
       ## 发布镜像
       - run: docker push eframework/yapi:latest
