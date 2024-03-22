@@ -25,7 +25,8 @@ jobs:
           echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
 
       ## 构建镜像
-      - run: docker build . -t eframework/yapi:${PACKAGE_VERSION}
+      - run: docker build . -t eframework/yapi:v${PACKAGE_VERSION}
+      - run: docker tag eframework/yapi:v${PACKAGE_VERSION} eframework/yapi:latest
 
       ## 登录镜像
       - uses: docker/login-action@v3
@@ -34,5 +35,5 @@ jobs:
           password: ${{ secrets.EF_DOCKER_TOKEN }}
 
       ## 发布镜像
-      - run: docker push eframework/yapi:${PACKAGE_VERSION}
+      - run: docker push eframework/yapi:v${PACKAGE_VERSION}
       - run: docker push eframework/yapi:latest
