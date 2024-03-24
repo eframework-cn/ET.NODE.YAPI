@@ -328,7 +328,7 @@ class List extends Component {
                 <div className="label">用户密码：</div>
               </Col>
               <Col span="15">
-                <Input placeholder="请输入用户密码" onChange={this.inputUserPassword} />
+                <Input placeholder="请输入用户密码" type="password" onChange={this.inputUserPassword} />
               </Col>
             </Row>
             <Row gutter={6} className="modal-input">
@@ -336,7 +336,7 @@ class List extends Component {
                 <div className="label">确认密码：</div>
               </Col>
               <Col span="15">
-                <Input placeholder="请确认用户密码" onChange={this.inputUserPassword2} />
+                <Input placeholder="请确认用户密码" type="password" onChange={this.inputUserPassword2} />
               </Col>
             </Row>
           </Modal>
