@@ -1566,17 +1566,31 @@ class interfaceController extends baseController {
           resp.on("error", err => reject(err));
           resp.on("end", async () => {
             let tmpRoot = path.join(root, "..", "tmp_" + Date.now());
-            if (!pathExistsSync(tmpRoot)) mkdirSync(tmpRoot);
-            let tmp = path.join(tmpRoot, "tmp_" + Date.now() + ".zip");
+            let tmpZip = tmpRoot + ".zip";
             try {
-              fs.writeFileSync(tmp, Buffer.concat(datas));
-              fs.rmdirSync(root, { recursive: true, force: true });
-              await nzip.unzip(tmp, tmpRoot);
+              fs.writeFileSync(tmpZip, Buffer.concat(datas));
+              await nzip.unzip(tmpZip, tmpRoot);
               let tmpProto = path.join(tmpRoot, name.toLowerCase());
-              fs.moveSync(tmpProto, root);
+              fs.rmdirSync(root, { recursive: true, force: true });
+              fs.mkdirSync(root);
+              rd.eachFileSync(tmpProto, (f) => {
+                let n = path.basename(f);
+                let t = path.dirname(f);
+                let r = path.relative(tmpProto, t);
+                let s = r.split(path.sep);
+                let d = root;
+                for (let i = 0; i < s.length; i++) {
+                  d += path.sep + s[i];
+                  if (!fs.existsSync(d)) fs.mkdirSync(d);
+                  else break;
+                }
+                fs.writeFileSync(path.join(d, n), fs.readFileSync(f));
+              });
+              // fs.moveSync(tmpProto, root, { overwrite: true }); // [tofix 20240423]windows docker permission issue.
               resolve();
             } catch (err) { reject(new Error(`unzip ${proto_repo.replace(".git", "")}/tree/${proto_branch} error: ${err.message}`)) }
             finally {
+              fs.unlinkSync(tmpZip);
               fs.rmdirSync(tmpRoot, { recursive: true, force: true });
             }
           });
