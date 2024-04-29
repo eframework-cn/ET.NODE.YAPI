@@ -1485,7 +1485,7 @@ class interfaceController extends baseController {
           proj = await this.projectModel.get(proj.id); // 确保repo_token
           await this.fetchProto(proj);
           let purl = `${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}`;
-          if (proj.repo_type == "gitea") prul = `${proj.proto_repo.replace(".git", "")}/src/branch/${proj.proto_branch}`;
+          if (proj.repo_type == "gitea") purl = `${proj.proto_repo.replace(".git", "")}/src/branch/${proj.proto_branch}`;
           yapi.commons.saveLog({
             content: `<a>${repoUser}</a> 同步了协议<a href="${purl}" target="_blank">[branch: ${proj.proto_branch}]</a> <a href="${commitUrl}" target="_blank">${commitMsg.trim()}</a>`,
             type: 'project',
