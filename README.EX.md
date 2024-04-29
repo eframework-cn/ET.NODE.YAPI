@@ -1,7 +1,9 @@
 ## INSTALL
-- Python3：https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe
-  - System Env：PYTHON=C:/Program Files/Python312/python.exe
-  - pip install setuptools
+- Python27：https://www.python.org/ftp/python/2.7.18/python-2.7.18.amd64.msi
+  - System Env：PYTHON=C:/Python27/python.exe
+- VS Env：
+  - Compiler：npm config set msbuild_path "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\MSBuild.exe"
+  - Build Tool（backup）：https://visualstudio.microsoft.com/zh-hans/visual-cpp-build-tools（C++ Desktop -> MSVC v141 VS 2017）
 - MongoDB：https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-6.0.0-signed.msi
 - Volta：https://github.com/volta-cli/volta/releases/download/v1.1.1/volta-1.1.1-windows-x86_64.msi
   - volta install node@12.22.8
