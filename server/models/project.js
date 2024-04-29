@@ -30,6 +30,7 @@ class projectModel extends baseModel {
     return {
       uid: { type: Number, required: true },
       name: { type: String, required: true },
+      repo_type: { type: String },
       proto_repo: { type: String },
       proto_branch: { type: String },
       repo_token: { type: String },
@@ -145,7 +146,7 @@ class projectModel extends baseModel {
   getBaseInfo(id, select) {
     select =
       select ||
-      '_id uid name basepath proto_repo proto_branch switch_notice desc group_id project_type env icon color add_time up_time pre_script after_script project_mock_script is_mock_open strice is_json5 tag';
+      '_id uid name basepath repo_type proto_repo proto_branch switch_notice desc group_id project_type env icon color add_time up_time pre_script after_script project_mock_script is_mock_open strice is_json5 tag';
     return this.model
       .findOne({
         _id: id
@@ -182,7 +183,7 @@ class projectModel extends baseModel {
       return this.model
         .find(params)
         .select(
-          '_id uid name basepath proto_repo proto_branch switch_notice desc group_id project_type color icon env add_time up_time'
+          '_id uid name basepath repo_type proto_repo proto_branch switch_notice desc group_id project_type color icon env add_time up_time'
         )
         .sort({ _id: -1 })
         .exec();
@@ -190,7 +191,7 @@ class projectModel extends baseModel {
       return this.model
         .find()
         .select(
-          '_id uid name basepath proto_repo proto_branch switch_notice desc group_id project_type color icon env add_time up_time'
+          '_id uid name basepath repo_type proto_repo proto_branch switch_notice desc group_id project_type color icon env add_time up_time'
         )
         .sort({ _id: -1 })
         .exec();

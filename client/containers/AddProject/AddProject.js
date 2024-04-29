@@ -130,7 +130,17 @@ class ProjectList extends Component {
                 rules: [
                   { validator: this.checkRepo }
                 ]
-              })(<Input placeholder="https://$hostname/$namespace/$repo.git" />)}
+              })(<Input placeholder="https://$hostname/$namespace/$repo.git"
+                addonBefore={getFieldDecorator('repo_type', { initialValue: 'gitea' })(
+                  <Select>
+                    <Option value="gitea">{'gitea'}</Option>
+                    <Option value="gitcode">{'gitcode'}</Option>
+                    <Option value="github">{'github'}</Option>
+                    <Option value="gitlab">{'gitlab'}</Option>
+                    <Option value="gitee">{'gitee'}</Option>
+                  </Select>
+                )}
+              />)}
             </FormItem>
 
             <FormItem {...formItemLayout} label="协议分支">

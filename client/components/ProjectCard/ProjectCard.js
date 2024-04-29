@@ -149,10 +149,13 @@ class ProjectCard extends Component {
             }}
           />
           <h4 className="ui-title">{projectData.name || projectData.projectname}</h4>
-          {singleMode == false &&
-            <a href={`${projectData.proto_repo.replace(".git", "")}/tree/${projectData.proto_branch}`} target='_blank'>
+          {singleMode == false && ((projectData.repo_type == "gitea" &&
+            <a href={`${projectData.proto_repo.replace(".git", "")}/src/branch/${projectData.proto_branch}`} target='_blank'>
               {`[branch: ${projectData.proto_branch}]`}
-            </a>
+            </a>) ||
+            (<a href={`${projectData.proto_repo.replace(".git", "")}/tree/${projectData.proto_branch}`} target='_blank'>
+              {`[branch: ${projectData.proto_branch}]`}
+            </a>))
           }
         </Card>
         <div

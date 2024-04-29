@@ -1433,8 +1433,10 @@ class interfaceController extends baseController {
       if (proj == null) throw new Error("no project was found, pid: " + pid);
       await this.fetchProto(proj);
       await this.listProto(ctx);
+      let purl = `${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}`;
+      if (proj.repo_type == "gitea") purl = `${proj.proto_repo.replace(".git", "")}/src/branch/${proj.proto_branch}`;
       yapi.commons.saveLog({
-        content: `<a>${this.$user.username}</a> 更新了协议<a href="${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}" target="_blank">[branch: ${proj.proto_branch}]</a>`,
+        content: `<a>${this.$user.username}</a> 更新了协议<a href="${purl}" target="_blank">[branch: ${proj.proto_branch}]</a>`,
         type: 'project',
         uid: this.$uid,
         username: this.$user.username,
@@ -1449,14 +1451,12 @@ class interfaceController extends baseController {
   async syncProto(ctx) {
     try {
       let ret = "";
-      let kind = null;
       let repo = null;
       let branch = null;
       let repoUser = null;
       let commitMsg = null;
       let commitUrl = null;
       if (ctx.params.object_kind) { // 腾讯工蜂: https://code.tencent.com/help/webhooks#webHooksPush
-        kind = "gitcode";
         repo = ctx.params.repository.git_http_url;
         branch = ctx.params.ref;
         let commit = ctx.params.commits[0];
@@ -1464,7 +1464,6 @@ class interfaceController extends baseController {
         commitMsg = commit ? commit.message : "";
         commitUrl = commit ? commit.url : "";
       } else if (ctx.request.header["x-gitea-event"] || ctx.request.header["X-Gitea-Event"]) { // Gitea：https://docs.gitea.com/zh-cn/usage/webhooks
-        kind = "gitea";
         repo = ctx.params.repository.clone_url;
         branch = ctx.params.ref;
         let commit = ctx.params.commits[0];
@@ -1484,9 +1483,11 @@ class interfaceController extends baseController {
           ret += proj.id;
           let pid = proj.id.toString();
           proj = await this.projectModel.get(proj.id); // 确保repo_token
-          await this.fetchProto(proj, kind)
+          await this.fetchProto(proj);
+          let purl = `${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}`;
+          if (proj.repo_type == "gitea") prul = `${proj.proto_repo.replace(".git", "")}/src/branch/${proj.proto_branch}`;
           yapi.commons.saveLog({
-            content: `<a>${repoUser}</a> 同步了协议<a href="${proj.proto_repo.replace(".git", "")}/tree/${proj.proto_branch}" target="_blank">[branch: ${proj.proto_branch}]</a> <a href="${commitUrl}" target="_blank">${commitMsg.trim()}</a>`,
+            content: `<a>${repoUser}</a> 同步了协议<a href="${purl}" target="_blank">[branch: ${proj.proto_branch}]</a> <a href="${commitUrl}" target="_blank">${commitMsg.trim()}</a>`,
             type: 'project',
             uid: this.$uid,
             username: this.$user.username,
@@ -1500,59 +1501,18 @@ class interfaceController extends baseController {
     }
   }
 
-  async fetchProto(proj, kind) {
+  async fetchProto(proj) {
     let pid = proj._id.toString();
     let root = path.resolve("./proto");
     if (!pathExistsSync(root)) mkdirSync(root);
     root = path.join(root, pid);
     if (!pathExistsSync(root)) mkdirSync(root);
-    const { proto_repo, proto_branch, repo_token } = proj;
+    const { repo_type, proto_repo, proto_branch, repo_token } = proj;
     if (proto_repo == null || proto_repo == "") throw new Error("proto_repo is invalid, pid: " + pid);
     if (proto_branch == null || proto_branch == "") throw new Error("proto_branch is invalid, pid: " + pid);
     if (repo_token == null || repo_token == "") throw new Error("repo_token is invalid, pid: " + pid);
-    if (kind == null) {
-      if (proto_repo.indexOf("git.code.tencent") >= 0) kind = "gitcode"
-      else {
-        await new Promise((resolve, reject) => {
-          let opts = { headers: { "Accept": "text/html" } };
-          let service = proto_repo.startsWith("https") ? https : http;
-          service.get(proto_repo, opts, (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => data += chunk);
-            resp.on("error", err => reject(err));
-            resp.on("end", async () => {
-              if (data.indexOf("gitea") >= 0) kind = "gitea"
-              resolve()
-            });
-          });
-        });
-      }
-    }
-    if (kind == "gitcode") {
-      let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F");
-      let aurl = "https://git.code.tencent.com/api/v3/projects/" + ns +
-        "/repository/archive?sha=" + proto_branch +
-        "&private_token=" + aesDecode(repo_token);
-      await new Promise((resolve, reject) => {
-        https.get(aurl, (resp) => {
-          let datas = new Array();
-          resp.on("data", (data) => { datas.push(data) });
-          resp.on("error", err => reject(err));
-          resp.on("end", async () => {
-            let tmp = path.join(root, "..", "tmp_" + Date.now() + ".zip");
-            try {
-              fs.writeFileSync(tmp, Buffer.concat(datas));
-              fs.rmdirSync(root, { recursive: true, force: true });
-              await nzip.unzip(tmp, root);
-              resolve();
-            } catch (err) { reject(new Error(`unzip ${proto_repo.replace(".git", "")}/tree/${proto_branch} error: ${err.message}`)) }
-            finally { fs.unlinkSync(tmp); }
-          });
-        });
-      });
-      this.protoIDMap[pid] = null;
-      this.protoPBMap[pid] = null;
-    } else if (kind == "gitea") {
+
+    if (repo_type == "gitea") {
       let strs = proto_repo.split("/")
       let domain = strs[0] + "//" + strs[2]
       let ns = strs[3]
@@ -1588,7 +1548,7 @@ class interfaceController extends baseController {
               });
               // fs.moveSync(tmpProto, root, { overwrite: true }); // [tofix 20240423]windows docker permission issue.
               resolve();
-            } catch (err) { reject(new Error(`unzip ${proto_repo.replace(".git", "")}/tree/${proto_branch} error: ${err.message}`)) }
+            } catch (err) { reject(new Error(`unzip ${proto_repo}#${proto_branch}(${repo_type}) error: ${err.message}`)) }
             finally {
               fs.unlinkSync(tmpZip);
               fs.rmdirSync(tmpRoot, { recursive: true, force: true });
@@ -1598,8 +1558,32 @@ class interfaceController extends baseController {
       });
       this.protoIDMap[pid] = null;
       this.protoPBMap[pid] = null;
+    } else if (repo_type == "gitcode") {
+      let ns = proto_repo.replace("https://git.code.tencent.com/", "").replace(".git", "").replace(/\//gm, "%2F");
+      let aurl = "https://git.code.tencent.com/api/v3/projects/" + ns +
+        "/repository/archive?sha=" + proto_branch +
+        "&private_token=" + aesDecode(repo_token);
+      await new Promise((resolve, reject) => {
+        https.get(aurl, (resp) => {
+          let datas = new Array();
+          resp.on("data", (data) => { datas.push(data) });
+          resp.on("error", err => reject(err));
+          resp.on("end", async () => {
+            let tmp = path.join(root, "..", "tmp_" + Date.now() + ".zip");
+            try {
+              fs.writeFileSync(tmp, Buffer.concat(datas));
+              fs.rmdirSync(root, { recursive: true, force: true });
+              await nzip.unzip(tmp, root);
+              resolve();
+            } catch (err) { reject(new Error(`unzip ${proto_repo}#${proto_branch}(${repo_type}) error: ${err.message}`)) }
+            finally { fs.unlinkSync(tmp); }
+          });
+        });
+      });
+      this.protoIDMap[pid] = null;
+      this.protoPBMap[pid] = null;
     } else {
-      throw new Error("proto_repo wasn't supported by now: " + proto_repo);
+      throw new Error(`proto_repo ${proto_repo} of type ${repo_type} wasn't supported by now`);
     }
   }
 

@@ -245,6 +245,7 @@ class ProjectMessage extends Component {
     let initFormValues = {};
     const {
       name,
+      repo_type,
       proto_repo,
       proto_branch,
       basepath,
@@ -258,6 +259,7 @@ class ProjectMessage extends Component {
     } = projectMsg;
     initFormValues = {
       name,
+      repo_type,
       proto_repo,
       proto_branch,
       basepath,
@@ -347,7 +349,19 @@ class ProjectMessage extends Component {
                   { required: false },
                   { validator: this.checkRepo }
                 ]
-              })(<Input placeholder="https://$hostname/$namespace/$repo.git" />)}
+              })(<Input
+                placeholder="https://$hostname/$namespace/$repo.git"
+                addonBefore={getFieldDecorator('repo_type', {
+                  initialValue: initFormValues.repo_type ? initFormValues.repo_type : 'gitea'
+                })(
+                  <Select>
+                    <Option value="gitea">{'gitea'}</Option>
+                    <Option value="gitcode">{'gitcode'}</Option>
+                    <Option value="github">{'github'}</Option>
+                    <Option value="gitlab">{'gitlab'}</Option>
+                    <Option value="gitee">{'gitee'}</Option>
+                  </Select>
+                )} />)}
             </FormItem>
 
             <FormItem {...formItemLayout} label="协议分支">

@@ -36,6 +36,10 @@ class projectController extends baseController {
       type: 'string',
       enum: ['owner', 'dev', 'guest']
     };
+    const repo_type = {
+      type: 'string',
+      default: 'gitea'
+    };
     const proto_repo = {
       type: 'string',
       default: ''
@@ -68,6 +72,7 @@ class projectController extends baseController {
     this.schemaMap = {
       add: {
         '*name': name,
+        repo_type: repo_type,
         proto_repo: proto_repo,
         proto_branch: proto_branch,
         repo_token: repo_token,
@@ -82,6 +87,7 @@ class projectController extends baseController {
       copy: {
         '*name': name,
         preName: name,
+        repo_type: repo_type,
         proto_repo: proto_repo,
         proto_branch: proto_branch,
         basepath: basepath,
@@ -224,6 +230,7 @@ class projectController extends baseController {
     let data = {
       name: params.name,
       desc: params.desc,
+      repo_type: params.repo_type,
       proto_repo: params.proto_repo,
       proto_branch: params.proto_branch,
       repo_token: params.repo_token,
@@ -796,6 +803,7 @@ class projectController extends baseController {
 
       params = yapi.commons.handleParams(params, {
         name: 'string',
+        repo_type: 'string',
         proto_repo: 'string',
         proto_branch: 'string',
         repo_token: 'string',
